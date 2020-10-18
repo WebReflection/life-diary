@@ -1,103 +1,198 @@
 #!/usr/bin/env node
 
-// ARGV PARSING
-const {createReadStream, existsSync, readdir, rmdir, rmdirSync, statSync, unlink} = require('fs');
-const {log, error} = require('essential-md');
+const {extname, join, resolve} = require('path');
+const {createReadStream, rmdir, unlink, mkdir, readFile} = require('fs');
 
-const argv = process.argv.slice(2);
-const help = argv.length !== 1 || /^(?:-h|--help)$/.test(argv[0]);
-if (help || !existsSync(argv[0]) || !statSync(argv[0]).isDirectory()) {
-  log`
-# life-diary ❤️ 
- -your albums, your journey, your data-
+const {log, warn} = require('essential-md');
 
- **usage**
-
-  \`life-diary ./destination-folder\`
-`;
-  if (!help)
-    error(`invalid folder ${argv[0]}\n`);
-  process.exit(help ? 0 : 1);
-}
+const include = util => require(join(__dirname, 'utils', `${util}.js`));
+const {FOLDER, TMP, PORT} = include('bootstrap');
+const {files, size} = include('disk');
+const transform = include('transform');
+const IPv4 = include('IPv4');
 
 
 
 // SERVER
-const {networkInterfaces} = require('os');
-const {join, resolve} = require('path');
-
+const mime = require('mime-types');
 const express = require('express');
 const fileUpload = require('express-fileupload');
-const mime = require('mime-types');
 
-const {PORT = 8080} = process.env;
-
-const FOLDER = resolve(argv[0]);
-const TMP = join(FOLDER, '.tmp');
-if (existsSync(TMP))
-  rmdirSync(TMP);
+const {parse} = JSON;
 
 const app = express();
+const json = mime.lookup('.json');
+const sizes = new Map;
 
+
+
+// MIDLLEWARE
 app.use(fileUpload({
   uploadTimeout: 0,
   createParentPath: true,
   useTempFiles: true,
   tempFileDir: TMP
 }));
+
 app.use(express.static(join(__dirname, 'public')));
 
-app.delete('/album/:name/:file', (req, res) => {
-  unlink(join(FOLDER, req.params.name, req.params.file), () => {
-    res.send('OK');
-  });
+
+
+// DELETE - TODO implement optional authentication to write
+app.delete('/album/:name/:file', ({params: {name, file}}, res) => {
+  const image = join(FOLDER, name, file);
+  if (resolve(image).indexOf(FOLDER)) {
+    warn`Illegal file *delete* operation: \`${image}\``;
+    res.send('NO');
+  }
+  else {
+    let work = 2;
+    const done = () => {
+      if (!--work) {
+        sizes.delete(join(FOLDER, name));
+        sizes.delete(FOLDER);
+        res.send('OK');
+      }
+    };
+    unlink(image, done);
+    unlink(join(FOLDER, name, '.json', file), done);
+  }
 });
-app.delete('/album/:name', (req, res) => {
-  rmdir(join(FOLDER, req.params.name), {recursive: true}, () => {
-    res.send('OK');
+
+app.delete('/album/:name', ({params: {name}}, res) => {
+  const album = join(FOLDER, name);
+  if (resolve(album).indexOf(FOLDER)) {
+    warn`Illegal folder *delete* operation: \`${album}\``;
+    res.send('NO');
+  }
+  else
+    rmdir(album, {recursive: true}, () => {
+      sizes.delete(album);
+      sizes.delete(FOLDER);
+      res.send('OK');
+    });
+});
+
+
+
+// GET - Album - TODO implement optional authentication to read
+app.get('/album/:name/:file', ({params: {name, file}}, res) => {
+  const image = join(FOLDER, name, file);
+  if (resolve(image).indexOf(FOLDER)) {
+    warn`Illegal file *get* operation: \`${image}\``;
+    res.send('NO');
+  }
+  else {
+    res.set('Content-Type', mime.lookup(image));
+    // TODO: this is very optimistic ... if files is removed
+    //       while streamed, there could be issues
+    //       but also if the file doesn't exist
+    createReadStream(
+      extname(image) === '.json' ?
+        join(FOLDER, name, '.json', file.slice(0, -5)) :
+        image
+    ).pipe(res);
+  }
+});
+
+app.get('/album/:name', ({params: {name}}, res) => {
+  const album = join(FOLDER, name);
+  if (resolve(album).indexOf(FOLDER)) {
+    warn`Illegal folder *get* operation: \`${album}\``;
+    res.send('NO');
+  }
+  files(join(album, '.json')).then(files => {
+    Promise.all(files.map(file => new Promise($ => {
+      readFile(join(album, '.json', file), (_, b) => $(parse(b || 'null')));
+    })))
+    .then(res.send.bind(res));
   });
 });
 
-app.get('/album/:name/:file', (req, res) => {
-  const file = join(FOLDER, req.params.name, req.params.file);
-  res.set('Content-Type', mime.lookup(file));
-  createReadStream(file).pipe(res);
-});
-app.get('/album/:name', (req, res) => {
-  readdir(join(FOLDER, req.params.name), sendFiles.bind(res));
-});
 app.get('/albums', (_, res) => {
-  readdir(FOLDER, sendFiles.bind(res));
+  files(FOLDER).then(noCache.bind(res));
 });
 
-app.post('/upload', (req, res) => {
-  if (req.files && req.query.album) {
-    const {upload} = req.files;
-    if (upload) {
-      for (const file of [].concat(upload))
-        file.mv(join(FOLDER, req.query.album, file.name));
+
+
+// GET - Size - TODO implement optional authentication to read
+const sendSize = (res, folder) => {
+  if (!sizes.has(folder))
+    sizes.set(folder, size(folder));
+  sizes.get(folder).then(noCache.bind(res));
+};
+
+app.get('/size/:name', ({params: {name}}, res) => {
+  const album = join(FOLDER, name);
+  if (resolve(album).indexOf(FOLDER)) {
+    warn`Illegal folder *size* operation: \`${album}\``;
+    res.send('NO');
+  }
+  sendSize(res, album);
+});
+
+app.get('/size', (_, res) => {
+  sendSize(res, FOLDER);
+});
+
+
+
+// POST - TODO implement optional authentication to write
+app.post('/upload', ({files, query: {album}}, res) => {
+  res.set('Content-Type', json);
+  if (files && files.upload && album) {
+    const {upload} = files;
+    const folder = join(FOLDER, album);
+    const image = join(folder, upload.name);
+    if (resolve(image).indexOf(FOLDER)) {
+      warn`Illegal file *upload* operation: \`${image}\``;
+      res.send('null');
+    }
+    else {
+      // TODO: avoid overwriting files with the same name
+      upload.mv(image).then(
+        () => {
+          mkdir(join(folder, '.json'), () => {
+            const full = `/album/${
+              encodeURIComponent(album)
+            }/${
+              encodeURIComponent(upload.name)
+            }`;
+            transform(folder, upload.name, full).then(data => {
+              sizes.delete(folder);
+              sizes.delete(FOLDER);
+              res.send(data);
+            });
+          });
+        },
+        () => res.send('null')
+      );
     }
   }
-  res.send('OK');
+  else
+    res.send('null');
 });
 
+// TODO - Implement image editing
+app.post('/update', () => {
+  res.send('NO');
+});
+
+
+
+// SERVER LISTEN
 app.listen(PORT, '0.0.0.0', () => {
   log``;
   log`# life-diary ❤️ `;
-  const nis = networkInterfaces();
-  for (const key of Object.keys(nis)) {
-    for (const interface of nis[key]) {
-      if (
-        interface.family === 'IPv4' &&
-        interface.address !== '127.0.0.1'
-      )
-        log` -visit-  **''http://${interface.address}:${PORT}/''**`;
-    }
-  }
+  for (const ip of IPv4())
+    log` -visit-  **''http://${ip}:${PORT}/''**`;
   log` -folder- ${FOLDER}`;
 });
 
-function sendFiles(error, files) {
+
+
+// LOCAL UTILS
+function noCache(content) {
   this.set('Cache-Control', 'no-store');
-  this.send(error ? [] : files.filter(file => !/^\./.test(file)));
+  this.send(content);
 }

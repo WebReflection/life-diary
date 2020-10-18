@@ -1,5 +1,5 @@
 if (!navigator.wakeLock) {
-  import('./NoSleep.js').then(() => {
+  import('./3rd/NoSleep.js').then(({NoSleep}) => {
     const noSleep = new NoSleep();
     navigator.wakeLock = {request() {
       noSleep.enable();

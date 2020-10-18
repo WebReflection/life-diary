@@ -1,19 +1,20 @@
 {
   "name": "life-diary",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "",
-  "bin": "./cjs/index.js",
+  "bin": "life-diary.js",
   "scripts": {
-    "start": "node ./life-diary.js ./test"
+    "test": "node ./life-diary.js ./test"
   },
   "keywords": [],
   "author": "Andrea Giammarchi",
   "license": "ISC",
   "dependencies": {
     "essential-md": "^0.3.1",
+    "exif-reader": "^1.0.3",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.0",
     "mime-types": "^2.1.27",
-    "multiparty": "^4.2.2"
+    "sharp": "^0.26.2"
   }
 }
