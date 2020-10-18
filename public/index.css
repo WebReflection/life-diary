@@ -1,0 +1,18 @@
+ul {
+  padding: 0;
+}
+
+li img, li video {
+  max-height: 128px;
+}
+
+li button {
+  margin-right: 16px;
+}
+
+li {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  margin: 0;
+}
