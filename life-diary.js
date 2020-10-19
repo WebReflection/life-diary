@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const {extname, join, resolve} = require('path');
-const {createReadStream, rmdir, unlink, mkdir, readFile} = require('fs');
+const {createReadStream, rmdir, unlink, mkdir, readFile, stat} = require('fs');
 
 const {log, warn} = require('essential-md');
 
@@ -19,6 +19,7 @@ const express = require('express');
 const fileUpload = require('express-fileupload');
 
 const {parse} = JSON;
+const PUBLIC = join(__dirname, 'public');
 
 const app = express();
 const json = mime.lookup('.json');
@@ -34,7 +35,7 @@ app.use(fileUpload({
   tempFileDir: TMP
 }));
 
-app.use(express.static(join(__dirname, 'public')));
+app.use(express.static(PUBLIC));
 
 
 
@@ -83,30 +84,39 @@ app.get('/album/:name/:file', ({params: {name, file}}, res) => {
     res.send('NO');
   }
   else {
-    res.set('Content-Type', mime.lookup(image));
-    // TODO: this is very optimistic ... if files is removed
-    //       while streamed, there could be issues
-    //       but also if the file doesn't exist
-    createReadStream(
-      extname(image) === '.json' ?
-        join(FOLDER, name, '.json', file.slice(0, -5)) :
-        image
-    ).pipe(res);
+    const path = extname(image) === '.json' ?
+      join(FOLDER, name, '.json', file.slice(0, -5)) :
+      image;
+    stat(path, err => {
+      if (err)
+        res.send('');
+      else {
+        res.set('Content-Type', mime.lookup(image));
+        createReadStream(path).pipe(res);
+      }
+    });
   }
 });
 
-app.get('/album/:name', ({params: {name}}, res) => {
-  const album = join(FOLDER, name);
+app.get('/album/:name', ({url, params: {name}}, res) => {
+  const isJSON = extname(name) === '.json';
+  const album = join(FOLDER, isJSON ? name.slice(0, -5) : name);
   if (resolve(album).indexOf(FOLDER)) {
     warn`Illegal folder *get* operation: \`${album}\``;
     res.send('NO');
   }
-  files(join(album, '.json')).then(files => {
-    Promise.all(files.map(file => new Promise($ => {
-      readFile(join(album, '.json', file), (_, b) => $(parse(b || 'null')));
-    })))
-    .then(res.send.bind(res));
-  });
+  else {
+    if (isJSON) {
+      files(join(album, '.json')).then(files => {
+        Promise.all(files.map(file => new Promise($ => {
+          readFile(join(album, '.json', file), (_, b) => $(parse(b || 'null')));
+        })))
+        .then(noCache.bind(res));
+      });
+    }
+    else
+      createReadStream(join(PUBLIC, 'index.html')).pipe(res);
+  }
 });
 
 app.get('/albums', (_, res) => {

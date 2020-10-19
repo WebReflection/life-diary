@@ -45,7 +45,7 @@ const renderFiles = (where, album, files) => {
 };
 
 const withUpload = album => {
-  json(`/album/${encodeURIComponent(album)}`).then(files => {
+  json(`/album/${encodeURIComponent(album)}.json`).then(files => {
     const uploadFiles = event => {
       const form = event.currentTarget.closest('form');
       const {upload} = form;
@@ -88,7 +88,7 @@ const withUpload = album => {
             )
             .then(res => res.json())
             .then(file => {
-              files.push(file);
+              files.unshift(file);
               status.current.textContent = `${++i + 1}/${length}`;
               renderFiles(list.current, album, files);
               uploadFile(i);
@@ -150,7 +150,9 @@ const createAlbum = event => {
 
 const showAlbum = event => {
   event.preventDefault();
-  withUpload(event.currentTarget.album);
+  const {album} = event.currentTarget;
+  withUpload(album);
+  history.pushState(null, album, `/album/${encodeURIComponent(album)}`);
 };
 
 
@@ -180,4 +182,13 @@ const showAlbums = where => {
   });
 };
 
-showAlbums(document.body);
+const popstate = () => {
+  if (/^\/album\/([^/]+?)$/.test(location.pathname))
+    withUpload(decodeURIComponent(RegExp.$1));
+  else
+    showAlbums(document.body);
+};
+
+addEventListener('popstate', popstate);
+
+popstate();
