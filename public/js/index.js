@@ -1,13 +1,16 @@
 import('./wake-lock.js');
 
 Promise.all([
+  import('./image.js'),
   import('./3rd/uce-loader.js'),
   import('./3rd/uce-template.js')
-]).then(([{loader}]) => {
+]).then(([{default: IMAGE}, {loader}]) => {
 
   const {render, html} = customElements.get('uce-lib');
   const Template = customElements.get('uce-template');
+
   const main = document.querySelector('main');
+  const footer = document.querySelector('footer');
 
   // Autoload Components
   loader({
@@ -33,7 +36,64 @@ Promise.all([
     }
   };
 
+  // TODO: improve this shit
+  const renderFullscreen = (clone, file, files) => {
+    footer.classList.add('fullscreen');
+    const {full, title, description} = file;
+    if (clone.getAttribute('src') !== full)
+      clone.src = full;
+    let i = files.indexOf(file);
+    let timer = 0;
+    window.onkeydown = event => {
+      let index = i;
+      switch (event.key) {
+        case 'ArrowRight':
+          i = ++i < files.length ? i : 0;
+          break;
+        case 'ArrowLeft':
+          i = --i > 0 ? i : files.length - 1;
+          break;
+      }
+      if (index !== i) {
+        const {full, title, description} = files[i];
+        footer.dataset.title = title;
+        footer.dataset.description = description;
+        if (IMAGE.test(full))
+          render(footer, html`<img src=${full} title=${title}>`);
+        else
+          render(footer, html`<video controls src=${full} />`);
+        clearTimeout(timer);
+        if (title || description) {
+          footer.classList.add('fade');
+          timer = setTimeout(() => footer.classList.remove('fade'), 4000);
+        }
+        else
+          footer.classList.remove('fade');
+      }
+    };
+    footer.appendChild(clone);
+    if (title || description) {
+      footer.dataset.title = title;
+      footer.dataset.description = description;
+      footer.classList.add('fade');
+      timer = setTimeout(() => footer.classList.remove('fade'), 4000);
+    }
+  };
+
   const renderMedia = (where, album, files) => {
+    const fullscreen = event => {
+      const {currentTarget, target} = event;
+      if (/^(?:img|video)$/i.test(target.nodeName)) {
+        event.preventDefault();
+        footer.requestFullscreen().then(
+          () => renderFullscreen(
+            target.cloneNode(true),
+            currentTarget.data,
+            files
+          )
+        );
+      }
+    };
     const removeMedia = ({detail: file}) => {
       const i = files.indexOf(file);
       if (-1 < i) {
@@ -43,7 +103,11 @@ Promise.all([
     };
     render(where, html.for(files, 'album')`
       ${files.map(file => html.for(file, 'media-preview')`
-        <ld-media-preview ondeleted=${removeMedia} .data=${file} />
+        <ld-media-preview
+            onclick=${fullscreen}
+            ondeleted=${removeMedia}
+            .data=${file}
+        />
       `)}
     `);
   };
@@ -202,6 +266,12 @@ Promise.all([
   };
 
   addEventListener('popstate', popstate);
+  addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+      footer.className = '';
+      footer.textContent = '';
+    }
+  });
   addEventListener('beforeunload', event => {
     if (fetching)
       return event.returnValue = 'PLEASE WAIT';
