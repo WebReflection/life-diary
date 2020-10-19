@@ -31,7 +31,7 @@
 <li is="ld-album">
   <a onclick={{visualize}} href={{href}}>{{this.name}}</a>
   <small>{{this.details}}</small>
-  <button is="ld-remover" title="delete" onclick={{remove}}>❎</button>
+  <button is="ld-remover" title="Delete" onclick={{remove}}>❎</button>
 </li>
 
 <script type="module">

@@ -21,6 +21,10 @@
   h2 {
     font-size: 1.2rem;
   }
+  p {
+    overflow: auto;
+    max-height: 256px;
+  }
   h2[data-value=""]::after {
     content: "Title";
   }
@@ -61,7 +65,7 @@
 <ld-media-preview>
   <a class="media" tabindex="0" href="#fullscreen">
     {{media}}
-    <button is="ld-remover" title="delete" onclick={{remove}}>❎</button>
+    <button is="ld-remover" title="Delete" onclick={{remove}}>❎</button>
   </a>
   <div>
     <h2 ref="title" data-value={{title}} onblur={{edit}}

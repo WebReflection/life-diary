@@ -27,12 +27,12 @@ form > fieldset {
 }
 
 fieldset > legend {
-  font-weight: bold;
+  display: none;
 }
 
 form.album {
   display: flex;
-  justify-content: center;
+  align-items: center;
   flex-direction: row;
   min-height: 100px;
 }
@@ -40,6 +40,12 @@ form.album {
 form.album > h1 {
   flex-grow: 1;
   margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+form.album > h1 > button {
+  padding: 16px;
 }
 
 div.album {

@@ -3,8 +3,8 @@ import('./wake-lock.js');
 Promise.all([
   import('./image.js'),
   import('./3rd/uce-loader.js'),
-  //import('./3rd/uce-template.js')
-  import('https://unpkg.com/uce-template?module')
+  import('./3rd/uce-template.js')
+  // import('https://unpkg.com/uce-template?module')
 ]).then(([{default: IMAGE}, {loader}]) => {
 
   const {render, html} = customElements.get('uce-lib');
@@ -156,9 +156,15 @@ Promise.all([
       };
       const list = {};
       const progress = {};
+      const home = event => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        listAlbums();
+        history.pushState(null, 'Life Diary ❤️', '/');
+      };
       render(main, html`
         <form class="album" onsubmit=${event => event.preventDefault()} method="post" action="/upload" enctype="multipart/form-data">
-          <h1>${album}</h1>
+          <h1><button title="Home" is="ld-remover" onclick=${home}>🏡</button> ${album}</h1>
           <fieldset>
             <legend>Upload new files</legend>
             <input onchange=${uploadFiles} type="file" name="upload" accept="audio/*,image/*,video/*" multiple required>

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const {extname, join, resolve} = require('path');
-const {createReadStream, rmdir, unlink, mkdir, readFile, stat, readdir, writeFile} = require('fs');
+const {rmdir, unlink, mkdir, readFile, readdir, writeFile} = require('fs');
 
 const {log, warn} = require('essential-md');
 
@@ -185,13 +185,9 @@ app.get('/album/:name/:file', (req, res) => {
     const path = extname(image) === '.json' ?
       join(FOLDER, name, '.json', file.slice(0, -5)) :
       image;
-    stat(path, err => {
+    res.sendFile(path, err => {
       if (err)
-        res.send('');
-      else {
-        res.set('Content-Type', mime.lookup(image));
-        createReadStream(path).pipe(res);
-      }
+        res.end('');
     });
   }
 });
@@ -217,7 +213,7 @@ app.get('/album/:name', (req, res) => {
       });
     }
     else
-      createReadStream(join(PUBLIC, 'index.html')).pipe(res);
+      res.sendFile(join(PUBLIC, 'index.html'));
   }
 });
 

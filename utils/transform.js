@@ -1,6 +1,6 @@
 const {execFile} = require('child_process');
 const {readFile, writeFile} = require('fs');
-const {basename, join} = require('path');
+const {join} = require('path');
 
 const mime = require('mime-types');
 const sharp = require('sharp');
