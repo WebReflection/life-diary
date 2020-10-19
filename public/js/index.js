@@ -36,64 +36,18 @@ Promise.all([
     }
   };
 
-  // TODO: improve this shit
-  const renderFullscreen = (clone, file, files) => {
-    footer.classList.add('fullscreen');
-    const {full, title, description} = file;
-    if (clone.getAttribute('src') !== full)
-      clone.src = full;
-    let i = files.indexOf(file);
-    let timer = 0;
-    window.onkeydown = event => {
-      let index = i;
-      switch (event.key) {
-        case 'ArrowRight':
-          i = ++i < files.length ? i : 0;
-          break;
-        case 'ArrowLeft':
-          i = --i > 0 ? i : files.length - 1;
-          break;
-      }
-      if (index !== i) {
-        const {full, title, description} = files[i];
-        footer.dataset.title = title;
-        footer.dataset.description = description;
-        if (IMAGE.test(full))
-          render(footer, html`<img src=${full} title=${title}>`);
-        else
-          render(footer, html`<video controls src=${full} />`);
-        clearTimeout(timer);
-        if (title || description) {
-          footer.classList.add('fade');
-          timer = setTimeout(() => footer.classList.remove('fade'), 4000);
-        }
-        else
-          footer.classList.remove('fade');
-      }
-    };
-    footer.appendChild(clone);
-    if (title || description) {
-      footer.dataset.title = title;
-      footer.dataset.description = description;
-      footer.classList.add('fade');
-      timer = setTimeout(() => footer.classList.remove('fade'), 4000);
-    }
-  };
-
   const renderMedia = (where, album, files) => {
+
     const fullscreen = event => {
-      const {currentTarget, target} = event;
+      let {currentTarget, target} = event;
+      if (/^a$/i.test(target.nodeName))
+        target = target.firstElementChild;
       if (/^(?:img|video)$/i.test(target.nodeName)) {
         event.preventDefault();
-        footer.requestFullscreen().then(
-          () => renderFullscreen(
-            target.cloneNode(true),
-            currentTarget.data,
-            files
-          )
-        );
+        footer.fullscreen(files, files.indexOf(currentTarget.data));
       }
     };
+
     const removeMedia = ({detail: file}) => {
       const i = files.indexOf(file);
       if (-1 < i) {
@@ -101,6 +55,7 @@ Promise.all([
         renderMedia(where, album, files);
       }
     };
+
     render(where, html.for(files, 'album')`
       ${files.map(file => html.for(file, 'media-preview')`
         <ld-media-preview
@@ -266,12 +221,6 @@ Promise.all([
   };
 
   addEventListener('popstate', popstate);
-  addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement) {
-      footer.className = '';
-      footer.textContent = '';
-    }
-  });
   addEventListener('beforeunload', event => {
     if (fetching)
       return event.returnValue = 'PLEASE WAIT';

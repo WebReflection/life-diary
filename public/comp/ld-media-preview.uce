@@ -39,27 +39,32 @@
     justify-content: center;
     height: 256px;
     background: silver;
+    position: relative;
+    text-decoration: none;
+    border: none;
   }
-  div.title {
-    display: flex;
-    padding: 4px;
-  }
-  div.title > h2 {
-    flex-grow: 1;
-  }
-  div.title > button {
+  .media > button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
     padding: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease-in;
+  }
+  .media:hover > button, .media > button:focus {
+    opacity: 1;
   }
 </style>
 
 <ld-media-preview>
-  <div class="media">{{media}}</div>
+  <a class="media" tabindex="0" href="#fullscreen">
+    {{media}}
+    <button is="ld-remover" title="delete" onclick={{remove}}>❎</button>
+  </a>
   <div>
-    <div class="title">
-      <h2 ref="title" data-value={{title}} onblur={{edit}}
+    <h2 ref="title" data-value={{title}} onblur={{edit}}
         contenteditable>{{title}}</h2>
-      <button is="ld-remover" title="delete" onclick={{remove}}>❎</button>
-    </div>
     <p ref="description" data-value={{description}} onblur={{edit}}
         contenteditable>{{description}}</p>
   </div>

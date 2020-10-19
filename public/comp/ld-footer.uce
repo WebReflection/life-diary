@@ -1,0 +1,114 @@
+<style>
+  footer[is="ld-footer"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    background-color: black;
+  }
+  footer[is="ld-footer"].details div {
+    opacity: 1;
+  }
+</style>
+<style scoped>
+  div, img, video {
+    max-width: 100%;
+    max-height: 100%;
+  }
+  div {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 32px;
+    color: white;
+    background: rgba(0, 0, 0, .7);
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+  }
+</style>
+<footer is="ld-footer"></footer>
+<script type="module">
+  import {render, html} from '@uce';
+  import IMAGE from '/js/image.js';
+
+  const details = (element, file) => html.for(element, 'details')`
+    <div>
+      <h2>${file.title}</h2>
+      <p>${file.description}</p>
+    </div>
+  `;
+
+  const view = (element, file, media) => {
+    render(element, html.for(element, 'view')`
+      ${media}
+      <div>
+        <h2>${file.title || '​'}</h2>
+        <p>${file.description || '​'}</p>
+      </div>
+    `)
+  };
+
+  const hideDetails = element => {
+    element.classList.remove('details');
+  };
+
+  export default {
+    fullscreen(files, i) {
+      this.requestFullscreen().then(() => {
+
+        const showContent = file => {
+          const {full, title} = file;
+          if (IMAGE.test(full))
+            view(this, file, html.for(file)`<img src=${full} title=${title}>`);
+          else
+            view(this, file, html.for(file)`<video controls src=${full} />`);
+          showDetails(file);
+        };
+
+        let timer = 0;
+        const showDetails = ({title, description}) => {
+          clearTimeout(timer);
+          if (title || description) {
+            requestAnimationFrame(() => {
+              this.classList.add('details');
+            });
+            timer = setTimeout(hideDetails, 4000, this);
+          }
+          else {
+            timer = 0;
+            this.classList.remove('details');
+          }
+        };
+
+        const onkeydown = event => {
+          let index = i;
+          switch (event.key) {
+            case 'ArrowRight':
+              i = ++i < files.length ? i : 0;
+              break;
+            case 'ArrowLeft':
+              i = --i > -1 ? i : files.length + i;
+              break;
+          }
+          if (index !== i)
+            showContent(files[i]);
+        };
+
+        const onfullscreenchange = () => {
+          if (!this.ownerDocument.fullscreenElement) {
+            this.className = '';
+            view(this, {title: '', description: ''}, '');
+            removeEventListener('keydown', onkeydown);
+            removeEventListener('fullscreenchange', onfullscreenchange);
+          }
+        };
+
+        addEventListener('keydown', onkeydown);
+        addEventListener('fullscreenchange', onfullscreenchange);
+
+        showContent(files[i]);
+      });
+    }
+  };
+</script>
