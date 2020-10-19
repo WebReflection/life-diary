@@ -3,7 +3,8 @@ import('./wake-lock.js');
 Promise.all([
   import('./image.js'),
   import('./3rd/uce-loader.js'),
-  import('./3rd/uce-template.js')
+  //import('./3rd/uce-template.js')
+  import('https://unpkg.com/uce-template?module')
 ]).then(([{default: IMAGE}, {loader}]) => {
 
   const {render, html} = customElements.get('uce-lib');

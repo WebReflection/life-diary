@@ -53,9 +53,14 @@
     element.classList.remove('details');
   };
 
+  const requestFullscreen = element => element.requestFullscreen ?
+      element.requestFullscreen() :
+      Promise.resolve(element.webkitRequestFullscreen())
+  ;
+
   export default {
     fullscreen(files, i) {
-      this.requestFullscreen().then(() => {
+      requestFullscreen(this).then(() => {
 
         const showContent = file => {
           const {full, title} = file;
@@ -96,16 +101,19 @@
         };
 
         const onfullscreenchange = () => {
-          if (!this.ownerDocument.fullscreenElement) {
+          const {ownerDocument} = this;
+          if (!ownerDocument.fullscreenElement && !ownerDocument.webkitFullscreenElement) {
             this.className = '';
             view(this, {title: '', description: ''}, '');
             removeEventListener('keydown', onkeydown);
             removeEventListener('fullscreenchange', onfullscreenchange);
+            removeEventListener('webkitfullscreenchange', onfullscreenchange);
           }
         };
 
         addEventListener('keydown', onkeydown);
         addEventListener('fullscreenchange', onfullscreenchange);
+        addEventListener('webkitfullscreenchange', onfullscreenchange);
 
         showContent(files[i]);
       });

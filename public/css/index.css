@@ -42,8 +42,10 @@ form.album > h1 {
   margin: 0;
 }
 
-ld-media-preview {
-  float: left;
+div.album {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 button[is="ld-remover"] {

@@ -3,7 +3,7 @@
     display: block;
     padding: 4px;
     border: 1 px solid silver;
-    height: 400px;
+    min-height: 264px;
     width: 264px;
   }
 </style>
@@ -16,6 +16,7 @@
   h2, p {
     padding: 4px;
     margin: 0;
+    white-space: pre-line;
   }
   h2 {
     font-size: 1.2rem;
@@ -76,6 +77,14 @@
 
   const {stringify} = JSON;
 
+  const clean = element => {
+    const {innerHTML} = element;
+    element.innerHTML = innerHTML
+                          .replace(/<br[\s/]?>/g, '\n')
+                          .replace(/(<\/(div|p)>)(<\2)/g, '$1\n$3');
+    return element.textContent.trim();
+  };
+
   export default {
 
     props: {data: {src:'', title: '', description: ''}},
@@ -104,8 +113,10 @@
         const {currentTarget} = event;
         const {title, description} = ref(element);
         const {data} = element;
-        const newTitle = title.textContent.trim();
-        const newDescription = description.textContent.trim();
+        const newTitle = clean(title);
+        const newDescription = clean(description);
+        title.textContent = newTitle;
+        description.textContent = newDescription;
         if (
           newTitle !== data.title ||
           newDescription !== data.description
