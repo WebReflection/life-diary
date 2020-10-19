@@ -7,7 +7,7 @@ const {log, warn} = require('essential-md');
 
 const include = util => require(join(__dirname, 'utils', `${util}.js`));
 const {FOLDER, TMP, PORT, PASSWORD_READ, PASSWORD_WRITE} = include('bootstrap');
-const {files, size} = include('disk');
+const {files, filter, size} = include('disk');
 const transform = include('transform');
 const IPv4 = include('IPv4');
 
@@ -254,11 +254,12 @@ app.get('/files/:name', (req, res) => {
     res.send('NO');
   }
   readdir(album, (err, files) => {
+    const {length} = filter(files || []);
     noCache.call(
       res,
       err ?
         '0 files' :
-        `${files.length} ${files.length === 1 ? 'file' : 'files'}`
+        `${length} ${length === 1 ? 'file' : 'files'}`
     );
   });
 });

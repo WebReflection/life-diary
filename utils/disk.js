@@ -3,6 +3,8 @@ const {join} = require('path');
 
 const {floor, log, pow} = Math;
 
+const filter = files => files.filter(file => !/^\./.test(file));
+
 const crawl = folder => new Promise($ => {
   readdir(folder, (err, files) => {
     if (err)
@@ -44,6 +46,8 @@ exports.size = file => size(file).then(readable);
 
 exports.files = folder => new Promise($ => {
   readdir(folder, (err, files) => {
-    $(err ? [] : files.filter(file => !/^\./.test(file)));
+    $(err ? [] : filter(files));
   });
 });
+
+exports.filter = filter;

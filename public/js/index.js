@@ -1,11 +1,10 @@
 import('./wake-lock.js');
 
 Promise.all([
-  import('./image.js'),
   import('./3rd/uce-loader.js'),
   import('./3rd/uce-template.js')
   // import('https://unpkg.com/uce-template?module')
-]).then(([{default: IMAGE}, {loader}]) => {
+]).then(([{loader}]) => {
 
   const {render, html} = customElements.get('uce-lib');
   const Template = customElements.get('uce-template');
@@ -189,6 +188,7 @@ Promise.all([
         withUpload(value);
       }
     };
+    history.pushState(null, 'Life Diary ❤️', '/');
     render(main, html`
       <form onsubmit=${onNameChosen} method="post" action="/upload" enctype="multipart/form-data">
         <input name="album" placeholder="Album name" required autofocus>
@@ -206,7 +206,8 @@ Promise.all([
   const listAlbums = () => {
     json('/albums').then(albums => {
       render(main, html`
-        <button onclick=${createAlbum}>Create a new album</button>
+        <h1 style="text-align:center">Life Diary ❤️</h1>
+        <button style="padding:8px" onclick=${createAlbum}>Create a new album</button>
         <ul>
           ${albums.map(album => html`
             <li is="ld-album"

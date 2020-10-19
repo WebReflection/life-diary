@@ -10,13 +10,25 @@
   footer[is="ld-footer"].details div {
     opacity: 1;
   }
+  footer[is="ld-footer"].live > button {
+    display: block;
+  }
+  footer[is="ld-footer"].map img,
+  footer[is="ld-footer"].map video {
+    z-index: 999;
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    width: 30%;
+  }
 </style>
+
 <style scoped>
   div, img, video {
     max-width: 100%;
     max-height: 100%;
   }
-  div {
+  div.details {
     position: absolute;
     bottom: 0;
     width: 100%;
@@ -24,7 +36,14 @@
     color: white;
     background: rgba(0, 0, 0, .7);
     opacity: 0;
-    transition: opacity 0.3s ease-in;
+  }
+  div[ref="map"] {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    opacity: 0;
   }
   h2 {
     margin: 0;
@@ -32,26 +51,47 @@
   h2, p {
     white-space: pre-line;
   }
+  button[ref="geo"] {
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    padding: 16px;
+    font-size: 1.2rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+  }
+  div.details, div[ref="map"], button[ref="geo"] {
+    transition: opacity 0.3s ease-in;
+  }
 </style>
+
 <footer is="ld-footer"></footer>
+
 <script type="module">
-  import {render, html} from '@uce';
+  import {render, html, ref} from '@uce';
   import IMAGE from '/js/image.js';
+  import EXIF from '/js/exif.js';
 
-  const details = (element, file) => html.for(element, 'details')`
-    <div>
-      <h2>${file.title}</h2>
-      <p>${file.description}</p>
-    </div>
-  `;
+  let leafLet, marker;
 
-  const view = (element, file, media) => {
+  const ontransitionend = ({currentTarget}) => {
+    if (currentTarget.style.opacity == 0)
+      currentTarget.style.display = 'none';
+  };
+
+  const view = (element, file, media, showMap) => {
     render(element, html.for(element, 'view')`
       ${media}
-      <div>
+      <div class="details">
         <h2>${file.title || '​'}</h2>
         <p>${file.description || '​'}</p>
       </div>
+      <div ref="map" ontransitionend=${ontransitionend}></div>
+      <button ref="geo" title="Map"
+        ontransitionend=${ontransitionend}
+        onclick=${showMap}>🗺️</button>
     `)
   };
 
@@ -64,17 +104,74 @@
       Promise.resolve(element.webkitRequestFullscreen())
   ;
 
+  const getCoords = ({metadata}) => {
+    return metadata && metadata.EXIF ? EXIF.coords(metadata.EXIF) : [];
+  };
+
+  const mapSetup = (el, coords) => new Promise($ => {
+    if (leafLet) {
+      marker.setLatLng(coords);
+      leafLet.panTo(coords);
+    }
+    else {
+      leafLet = L.map(el).setView(coords, 16);
+      marker = L.marker(coords).addTo(leafLet);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(leafLet);
+    }
+  });
+
+  const displayAndShow = el => {
+    el.style.display = 'block';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.opacity = 1;
+    }));
+  };
+
   export default {
     fullscreen(files, i) {
       requestFullscreen(this).then(() => {
 
+        this.classList.add('live');
+
+        const showMap = event => {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const {map, geo} = ref(this);
+          const coords = getCoords(files[i]);
+          if (coords.length) {
+            if (map.style.opacity == 1) {
+              this.classList.remove('map');
+              map.style.opacity = 0;
+            }
+            else  {
+              this.classList.add('map');
+              displayAndShow(map);
+              mapSetup(map, coords);
+            };
+          }
+        };
+
         const showContent = file => {
           const {full, title} = file;
-          if (IMAGE.test(full))
-            view(this, file, html.for(file)`<img src=${full} title=${title}>`);
-          else
-            view(this, file, html.for(file)`<video controls src=${full} />`);
+          const media = IMAGE.test(full) ?
+                          html.for(file)`<img src=${full} title=${title}>` :
+                          html.for(file)`<video controls src=${full} />`;
+          view(this, file, media, showMap);
           showDetails(file);
+
+          const {map, geo} = ref(this);
+          const coords = getCoords(file);
+          if (coords.length) {
+            displayAndShow(geo);
+            mapSetup(map, coords);
+          }
+          else {
+            this.classList.remove('map');
+            map.style.opacity = 0;
+            geo.style.opacity = 0;
+          }
         };
 
         let timer = 0;
@@ -88,7 +185,7 @@
           }
           else {
             timer = 0;
-            this.classList.remove('details');
+            hideDetails(this);
           }
         };
 
@@ -102,15 +199,20 @@
               i = --i > -1 ? i : files.length + i;
               break;
           }
-          if (index !== i)
+          if (index !== i) {
+            ref(this).geo.blur();
             showContent(files[i]);
+          }
         };
 
         const onfullscreenchange = () => {
           const {ownerDocument} = this;
           if (!ownerDocument.fullscreenElement && !ownerDocument.webkitFullscreenElement) {
+            const {map, geo} = ref(this);
+            map.style.opacity = 0;
+            geo.style.opacity = 0;
             this.className = '';
-            view(this, {title: '', description: ''}, '');
+            view(this, {title: '', description: ''}, '', null);
             removeEventListener('keydown', onkeydown);
             removeEventListener('fullscreenchange', onfullscreenchange);
             removeEventListener('webkitfullscreenchange', onfullscreenchange);
@@ -122,6 +224,8 @@
         addEventListener('webkitfullscreenchange', onfullscreenchange);
 
         showContent(files[i]);
+        ref(this).map.style.display = 'block';
+
       });
     }
   };
