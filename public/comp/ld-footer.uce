@@ -20,11 +20,17 @@
     position: absolute;
     bottom: 0;
     width: 100%;
-    padding: 32px;
+    padding: 16px;
     color: white;
     background: rgba(0, 0, 0, .7);
     opacity: 0;
     transition: opacity 0.3s ease-in;
+  }
+  h2 {
+    margin: 0;
+  }
+  h2, p {
+    white-space: pre-line;
   }
 </style>
 <footer is="ld-footer"></footer>
