@@ -1,6 +1,6 @@
 {
   "name": "life-diary",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "",
   "bin": "life-diary.js",
   "scripts": {
@@ -10,6 +10,8 @@
   "author": "Andrea Giammarchi",
   "license": "ISC",
   "dependencies": {
+    "basic-auth": "^2.0.1",
+    "body-parser": "^1.19.0",
     "essential-md": "^0.3.1",
     "exif-reader": "^1.0.3",
     "express": "^4.17.1",

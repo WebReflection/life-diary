@@ -1,18 +1,51 @@
-ul {
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+}
+
+body > main {
+  max-width: 826px;
+  margin: auto;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+main > * {
+  width: 100%;
   padding: 0;
 }
 
-li img, li video {
-  max-height: 128px;
+form > fieldset {
+  border: 0;
 }
 
-li button {
-  margin-right: 16px;
+fieldset > legend {
+  font-weight: bold;
 }
 
-li {
+form.album {
   display: flex;
-  align-items: center;
-  padding: 16px;
+  justify-content: center;
+  flex-direction: row;
+  min-height: 100px;
+}
+
+form.album > h1 {
+  flex-grow: 1;
   margin: 0;
+}
+
+ld-media-preview {
+  float: left;
+}
+
+button[is="ld-remover"] {
+  display: none;
 }

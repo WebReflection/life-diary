@@ -1,0 +1,32 @@
+<style>
+  ld-progress {
+    display: block;
+    width: 100%;
+    padding: 4px;
+  }
+</style>
+
+<style scoped>
+  progress {
+    width: 100%;
+  }
+  small {
+    display: block;
+    text-align: center;
+    opacity: .7;
+  }
+</style>
+
+<ld-progress>
+  <progress max={{this.max}} value={{this.value}}></progress>
+  <small><code>{{this.spinner}}</code> {{this.details}}</small>
+</ld-progress>
+
+<script type="module" setup="props">
+  export const props = {
+    max: this.max || 1,
+    value: this.value || 0,
+    details: this.details || '',
+    spinner: this.spinner || ''
+  };
+</script>

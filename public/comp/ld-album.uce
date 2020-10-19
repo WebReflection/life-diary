@@ -1,0 +1,83 @@
+<style>
+  ul > li[is="ld-album"] {
+    list-style: none;
+    display: flex;
+    padding: 0;
+    border-radius: 4px;
+    opacity: .7;
+  }
+  ul > li[is="ld-album"]:hover {
+    opacity: 1;
+    z-index: 1;
+    box-shadow: 0 8px 6px -6px silver;
+    transform: scale(1.01);
+  }
+  ul > li[is="ld-album"] > * {
+    padding: 16px;
+  }
+</style>
+
+<style scoped>
+  a, a:visited {
+    flex-grow: 1;
+    color: initial;
+    font-weight: bold;
+  }
+  small {
+    cursor: default;
+  }
+</style>
+
+<li is="ld-album">
+  <a onclick={{visualize}} href={{href}}>{{this.name}}</a>
+  <small>{{this.details}}</small>
+  <button is="ld-remover" title="delete" onclick={{remove}}>❎</button>
+</li>
+
+<script type="module">
+  const stop = event => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+
+  const style = element => {
+    element.style.transition = 'all 0.2s ease-in';
+  };
+
+  export default {
+    props: {name: this.name || '', details: ''},
+    setup(element) {
+      const encoded = () => encodeURIComponent(element.name);
+      const endPoint = () => `/album/${encoded()}`;
+      const dispatch = (type, detail) => element.dispatchEvent(
+        new CustomEvent(type, {detail})
+      );
+      Promise.all([
+        fetch(`/files/${encoded()}`).then(b => b.text()),
+        fetch(`/size/${encoded()}`).then(b => b.text())
+      ])
+      .then(([files, bytes]) => {
+        element.details = `${files} - ${bytes}`;
+      });
+
+      // avoid transition moving everything around
+      setTimeout(style, 0, element);
+
+      return {
+        get href() { return endPoint(); },
+        remove(event) {
+          stop(event);
+          if (confirm(`Are you sure to delete ${element.name}?\nIt has ${element.details}`)) {
+            fetch(endPoint(), {method: 'DELETE'}).then(b => b.text()).then(() => {
+              dispatch('deleted');
+            });
+          }
+        },
+        visualize(event) {
+          stop(event);
+          dispatch('visualize', element.name);
+        }
+      };
+    }
+  };
+</script>

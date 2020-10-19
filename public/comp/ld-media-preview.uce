@@ -1,0 +1,142 @@
+<style>
+  ld-media-preview {
+    display: block;
+    padding: 4px;
+    border: 1 px solid silver;
+    height: 400px;
+    width: 264px;
+  }
+</style>
+
+<style scoped>
+  img, video {
+    max-width: 256px;
+    max-height: 256px;
+  }
+  h2 {
+    font-size: 1.2rem;
+  }
+  h2, p {
+    padding: 4px;
+  }
+  h2[data-value=""]::after {
+    content: "Title";
+  }
+  p[data-value=""]::after {
+    content: "Description";
+  }
+  h2[data-value=""]::after, p[data-value=""]::after {
+    opacity: .4;
+  }
+  h2:focus[data-value=""]::after, p:focus[data-value=""]::after {
+    content: "";
+  }
+  .media {
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 256px;
+    background: silver;
+  }
+  div.title {
+    display: flex;
+  }
+  div.title > h2 {
+    flex-grow: 1;
+  }
+  div.title > button {
+    padding: 8px;
+  }
+</style>
+
+<ld-media-preview>
+  <div class="media">{{media}}</div>
+  <div>
+    <div class="title">
+      <h2 ref="title" data-value={{title}} onblur={{edit}}
+        contenteditable>{{title}}</h2>
+      <button is="ld-remover" title="delete" onclick={{remove}}>❎</button>
+    </div>
+    <p ref="description" data-value={{description}} onblur={{edit}}
+        contenteditable>{{description}}</p>
+  </div>
+</ld-media-preview>
+
+<script type="module">
+  import {html, ref} from '@uce';
+
+  const {stringify} = JSON;
+  const IMAGE = /\.(?:webp|avif|a?png|jpe?g|gif|svg)$/i;
+
+  export default {
+    props: {data: {src:'', title: '', description: ''}},
+    setup(element) {
+      return {
+        remove(event) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const {currentTarget} = event;
+          const {data} = element;
+          if (confirm(`Are you sure to delete ${data.full}?\n${data.title} ${data.description}`)) {
+            currentTarget.disabled = true;
+            fetch(data.full, {method: 'DELETE'})
+              .then(res => res.text()).then(result => {
+                currentTarget.disabled = false;
+                if (result === 'OK')
+                  element.dispatchEvent(
+                    new CustomEvent('deleted', {detail: data})
+                  );
+                else
+                  alert(`Unable to delete ${data.full}`);
+              });
+            }
+        },
+        edit(event) {
+          const {currentTarget} = event;
+          const {title, description} = ref(element);
+          const {data} = element;
+          const newTitle = title.textContent.trim();
+          const newDescription = description.textContent.trim();
+          if (
+            newTitle !== data.title ||
+            newDescription !== data.description
+          ) {
+            const json = {
+              title: title.dataset.value = newTitle,
+              description: description.dataset.value = newDescription
+            };
+            const info = {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: stringify(json)
+            };
+            currentTarget.contentEditable = false;
+            fetch(data.full, info).then(b => b.text()).then(result => {
+              currentTarget.contentEditable = true;
+              if (result === 'OK') {
+                data.title = json.title;
+                data.description = json.description;
+              }
+              else
+                alert(`Unable to save updated details`);
+            });
+          }
+        },
+        get media() {
+          const {full, preview, title, description} = element.data;
+          switch (true) {
+            case IMAGE.test(full):
+              return html.for(element, 'img')`<img src=${preview} title=${title}>`;
+            default:
+              return html.for(element, 'img')`<video controls src=${preview} />`;
+          }
+        },
+        get title() { return element.data.title; },
+        get description() { return element.data.description; }
+      }
+    }
+  };
+</script>

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 const {extname, join, resolve} = require('path');
-const {createReadStream, rmdir, unlink, mkdir, readFile, stat} = require('fs');
+const {createReadStream, rmdir, unlink, mkdir, readFile, stat, readdir, writeFile} = require('fs');
 
 const {log, warn} = require('essential-md');
 
 const include = util => require(join(__dirname, 'utils', `${util}.js`));
-const {FOLDER, TMP, PORT} = include('bootstrap');
+const {FOLDER, TMP, PORT, PASSWORD_READ, PASSWORD_WRITE} = include('bootstrap');
 const {files, size} = include('disk');
 const transform = include('transform');
 const IPv4 = include('IPv4');
@@ -14,11 +14,23 @@ const IPv4 = include('IPv4');
 
 
 // SERVER
+const auth = require('basic-auth');
 const mime = require('mime-types');
 const express = require('express');
 const fileUpload = require('express-fileupload');
+const bodyParser = require('body-parser');
 
-const {parse} = JSON;
+const pass = (req, res, pass) => {
+  const access = !pass || ((auth(req) || {pass: ''}).pass === pass);
+  if (!access) {
+    res.statusCode = 401;
+    res.setHeader('WWW-Authenticate', 'Basic realm="life-diary"');
+    res.end('Access denied');
+  }
+  return access;
+};
+
+const {parse, stringify} = JSON;
 const PUBLIC = join(__dirname, 'public');
 
 const app = express();
@@ -37,10 +49,14 @@ app.use(fileUpload({
 
 app.use(express.static(PUBLIC));
 
+app.use(bodyParser.json());
 
 
-// DELETE - TODO implement optional authentication to write
-app.delete('/album/:name/:file', ({params: {name, file}}, res) => {
+// DELETE
+app.delete('/album/:name/:file', (req, res) => {
+  if (!pass(req, res, PASSWORD_WRITE))
+    return;
+  const {params: {name, file}} = req;
   const image = join(FOLDER, name, file);
   if (resolve(image).indexOf(FOLDER)) {
     warn`Illegal file *delete* operation: \`${image}\``;
@@ -60,7 +76,10 @@ app.delete('/album/:name/:file', ({params: {name, file}}, res) => {
   }
 });
 
-app.delete('/album/:name', ({params: {name}}, res) => {
+app.delete('/album/:name', (req, res) => {
+  if (!pass(req, res, PASSWORD_WRITE))
+    return;
+  const {params: {name}} = req;
   const album = join(FOLDER, name);
   if (resolve(album).indexOf(FOLDER)) {
     warn`Illegal folder *delete* operation: \`${album}\``;
@@ -76,79 +95,11 @@ app.delete('/album/:name', ({params: {name}}, res) => {
 
 
 
-// GET - Album - TODO implement optional authentication to read
-app.get('/album/:name/:file', ({params: {name, file}}, res) => {
-  const image = join(FOLDER, name, file);
-  if (resolve(image).indexOf(FOLDER)) {
-    warn`Illegal file *get* operation: \`${image}\``;
-    res.send('NO');
-  }
-  else {
-    const path = extname(image) === '.json' ?
-      join(FOLDER, name, '.json', file.slice(0, -5)) :
-      image;
-    stat(path, err => {
-      if (err)
-        res.send('');
-      else {
-        res.set('Content-Type', mime.lookup(image));
-        createReadStream(path).pipe(res);
-      }
-    });
-  }
-});
-
-app.get('/album/:name', ({url, params: {name}}, res) => {
-  const isJSON = extname(name) === '.json';
-  const album = join(FOLDER, isJSON ? name.slice(0, -5) : name);
-  if (resolve(album).indexOf(FOLDER)) {
-    warn`Illegal folder *get* operation: \`${album}\``;
-    res.send('NO');
-  }
-  else {
-    if (isJSON) {
-      files(join(album, '.json')).then(files => {
-        Promise.all(files.map(file => new Promise($ => {
-          readFile(join(album, '.json', file), (_, b) => $(parse(b || 'null')));
-        })))
-        .then(noCache.bind(res));
-      });
-    }
-    else
-      createReadStream(join(PUBLIC, 'index.html')).pipe(res);
-  }
-});
-
-app.get('/albums', (_, res) => {
-  files(FOLDER).then(noCache.bind(res));
-});
-
-
-
-// GET - Size - TODO implement optional authentication to read
-const sendSize = (res, folder) => {
-  if (!sizes.has(folder))
-    sizes.set(folder, size(folder));
-  sizes.get(folder).then(noCache.bind(res));
-};
-
-app.get('/size/:name', ({params: {name}}, res) => {
-  const album = join(FOLDER, name);
-  if (resolve(album).indexOf(FOLDER)) {
-    warn`Illegal folder *size* operation: \`${album}\``;
-    res.send('NO');
-  }
-  sendSize(res, album);
-});
-
-app.get('/size', (_, res) => {
-  sendSize(res, FOLDER);
-});
-
-
-
-// POST - TODO implement optional authentication to write
-app.post('/upload', ({files, query: {album}}, res) => {
+// POST
+app.post('/upload', (req, res) => {
+  if (!pass(req, res, PASSWORD_WRITE))
+    return;
+  const {files, query: {album}} = req;
   res.set('Content-Type', json);
   if (files && files.upload && album) {
     const {upload} = files;
@@ -183,9 +134,143 @@ app.post('/upload', ({files, query: {album}}, res) => {
     res.send('null');
 });
 
-// TODO - Implement image editing
-app.post('/update', () => {
-  res.send('NO');
+app.put('/album/:name/:file', (req, res) => {
+  if (!pass(req, res, PASSWORD_WRITE))
+    return;
+  const {body, params: {name, file}} = req;
+  const image = join(FOLDER, name, file);
+  if (!body || resolve(image).indexOf(FOLDER)) {
+    warn`Illegal file *put* operation: \`${image}\``;
+    res.send('NO');
+  }
+  else {
+    const path = join(FOLDER, name, '.json', file);
+    readFile(path, (err, data) => {
+      if (err)
+        res.send('NO');
+      else {
+        try {
+          const info = parse(data);
+          info.title = body.title || '';
+          info.description = body.description || '';
+          writeFile(path, stringify(info), err => {
+            res.send(err ? 'NO' : 'OK');
+          });
+        }
+        catch (o_O) {
+          // TODO: corrupted JSON files are possible
+          //       (user left early or something)
+          //       be sure if the file exists
+          //       its JSON gets re-sanitize
+          res.send('NO');
+        }
+      }
+    });
+  }
+});
+
+
+
+// GET - Album - TODO implement optional authentication to read
+app.get('/album/:name/:file', (req, res) => {
+  if (!pass(req, res, PASSWORD_READ))
+    return;
+  const {params: {name, file}} = req;
+  const image = join(FOLDER, name, file);
+  if (resolve(image).indexOf(FOLDER)) {
+    warn`Illegal file *get* operation: \`${image}\``;
+    res.send('NO');
+  }
+  else {
+    const path = extname(image) === '.json' ?
+      join(FOLDER, name, '.json', file.slice(0, -5)) :
+      image;
+    stat(path, err => {
+      if (err)
+        res.send('');
+      else {
+        res.set('Content-Type', mime.lookup(image));
+        createReadStream(path).pipe(res);
+      }
+    });
+  }
+});
+
+app.get('/album/:name', (req, res) => {
+  if (!pass(req, res, PASSWORD_READ))
+    return;
+  const {params: {name}} = req;
+  const isJSON = extname(name) === '.json';
+  const album = join(FOLDER, isJSON ? name.slice(0, -5) : name);
+  if (resolve(album).indexOf(FOLDER)) {
+    warn`Illegal folder *get* operation: \`${album}\``;
+    res.send('NO');
+  }
+  else {
+    if (isJSON) {
+      files(join(album, '.json')).then(files => {
+        Promise.all(files.map(file => new Promise($ => {
+          readFile(join(album, '.json', file), (_, b) => $(parse(b || 'null')));
+        })))
+        .then(noCache.bind(res))
+        .catch(noCache.bind(res, 'NO'));
+      });
+    }
+    else
+      createReadStream(join(PUBLIC, 'index.html')).pipe(res);
+  }
+});
+
+app.get('/albums', (req, res) => {
+  if (!pass(req, res, PASSWORD_READ))
+    return;
+  files(FOLDER).then(noCache.bind(res));
+});
+
+
+
+// GET - Size - TODO implement optional authentication to read
+const sendSize = (res, folder) => {
+  if (!sizes.has(folder))
+    sizes.set(folder, size(folder));
+  sizes.get(folder).then(noCache.bind(res));
+};
+
+app.get('/size/:name', (req, res) => {
+  if (!pass(req, res, PASSWORD_READ))
+    return;
+  const {params: {name}} = req;
+  const album = join(FOLDER, name);
+  if (resolve(album).indexOf(FOLDER)) {
+    warn`Illegal folder *size* operation: \`${album}\``;
+    res.send('NO');
+  }
+  sendSize(res, album);
+});
+
+app.get('/files/:name', (req, res) => {
+  if (!pass(req, res, PASSWORD_READ))
+    return;
+  const {params: {name}} = req;
+  const album = join(FOLDER, name);
+  if (resolve(album).indexOf(FOLDER)) {
+    warn`Illegal folder *size* operation: \`${album}\``;
+    res.send('NO');
+  }
+  readdir(album, (err, files) => {
+    noCache.call(
+      res,
+      err ?
+        '0 files' :
+        `${files.length} ${files.length === 1 ? 'file' : 'files'}`
+    );
+  });
+});
+
+app.get('/size', (req, res) => {
+  if (!pass(req, res, PASSWORD_READ))
+    return;
+  sendSize(res, FOLDER);
 });
 
 
@@ -195,8 +280,14 @@ app.listen(PORT, '0.0.0.0', () => {
   log``;
   log`# life-diary ❤️ `;
   for (const ip of IPv4())
-    log` -visit-  **''http://${ip}:${PORT}/''**`;
-  log` -folder- ${FOLDER}`;
+    log` -visit-    **''http://${ip}:${PORT}/''**`;
+  log` -folder-   ${FOLDER}`;
+  if (PASSWORD_WRITE) {
+    if (PASSWORD_READ === PASSWORD_WRITE)
+      log` -password- view/edit`;
+    else
+      log` -password- edit only`;
+  }
 });
 
 
