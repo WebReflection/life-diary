@@ -238,6 +238,7 @@
             removeEventListener('keydown', onkeydown);
             removeEventListener('fullscreenchange', onfullscreenchange);
             removeEventListener('webkitfullscreenchange', onfullscreenchange);
+            setTimeout(() => map.style.display = 'none', 3);
           }
         };
 
