@@ -149,6 +149,7 @@
       if (element.webkitRequestFullscreen)
         $(element.webkitRequestFullscreen());
       else {
+        // ... thank you iOS Safari ...
         element.addEventListener('dblclick', fullscreenchange);
         document.body.classList.add('ld-fullscreen');
         $(element.classList.add('fallback'));

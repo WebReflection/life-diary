@@ -90,7 +90,6 @@ To start with, I am not a designer, so that I'd love to have some help improving
 
   * I've made it work, I've made it (*kinda*) fast, now I need your help to make it *beautiful*
   * fix all mobile phones related gothas: *fullscreen* and/or its navigation (swipe L/R), styles, etc
-  * clean up the *spaghetti* `index.js`, its routing is awkward and everything feels rushed (well, I did this in a day, on a Sunday, so ... that's actually accurate)
 
 If you have an other suggestion for either client or server side, I'm listening!
 
