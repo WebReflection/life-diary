@@ -1,7 +1,23 @@
+const {execSync} = require('child_process');
 const {existsSync, rmdirSync, statSync, writeFile} = require('fs');
 const {join, resolve} = require('path');
 
 const {log, error} = require('essential-md');
+
+let EXIF = '';
+try { EXIF = execSync('exiftool -ver').toString().trim(); }
+catch (e) {
+  log`
+# life-diary ❤️ 
+ -your albums, your journey, your data-
+
+ **exiftool required**
+
+ Please install exiftool to use this software, thank you!
+ -visit- https://exiftool.org/install.html
+`;
+  process.exit(1);
+}
 
 const argv = process.argv.slice(2);
 const options = argv.filter(arg => /^--/.test(arg));
@@ -46,4 +62,4 @@ let PASSWORD_WRITE = PASSWORD_READ;
 if (!PASSWORD_WRITE && options.some(arg => /^--password-write=(.+)$/.test(arg)))
   PASSWORD_WRITE = RegExp.$1;
 
-module.exports = {FOLDER, TMP, PORT, PASSWORD_READ, PASSWORD_WRITE};
+module.exports = {EXIF, FOLDER, TMP, PORT, PASSWORD_READ, PASSWORD_WRITE};
