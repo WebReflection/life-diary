@@ -42,7 +42,8 @@ npx life-diary ~/MyDiary
 If everything was OK, the terminal should show something like this:
 
 ```
-life-diary ❤️  
+Life Diary ❤️
+ version  x.x.x
  visit    http://192.168.1.123:8080/
  folder   /home/my-name/MyDiary
 ```

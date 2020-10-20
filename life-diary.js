@@ -296,7 +296,7 @@ app.get('/size', (req, res) => {
 // SERVER LISTEN
 app.listen(PORT, '0.0.0.0', () => {
   log``;
-  log`# life-diary ❤️ `;
+  log`# Life Diary ❤️ `;
   log` -version-  ${require(join(__dirname, 'package.json')).version}`;
   for (const ip of IPv4())
     log` -visit-    **''http://${ip}:${PORT}/''**`;

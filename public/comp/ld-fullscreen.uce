@@ -296,6 +296,8 @@
         addEventListener('webkitfullscreenchange', onfullscreenchange);
 
         showContent(files[i]);
+
+        // avoid map interfeering with the gallery
         const {map} = ref(this);
         map.style.display = 'block';
         map.style.visibility = 'hidden';
