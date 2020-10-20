@@ -21,6 +21,17 @@
     left: 16px;
     width: 30%;
   }
+  footer[is="ld-fullscreen"].fallback {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 999;
+  }
+  body.ld-fullscreen > *:not(footer[is="ld-fullscreen"]) {
+    visibility: hidden;
+  }
 </style>
 
 <style scoped>
@@ -65,6 +76,13 @@
   div.details, div[ref="map"], button[ref="geo"] {
     transition: opacity 0.3s ease-in;
   }
+  button.fallback {
+    position: fixed;
+    padding: 16px;
+    top: 4px;
+    left: 4px;
+    z-index: 9999;
+  }
 </style>
 
 <footer is="ld-fullscreen"></footer>
@@ -95,6 +113,7 @@
   import EXIF from '/js/exif.js';
 
   let leafLet, marker;
+  let fallback = false;
 
   const ontransitionend = ({currentTarget}) => {
     if (currentTarget.style.opacity == 0)
@@ -119,10 +138,23 @@
     element.classList.remove('details');
   };
 
-  const requestFullscreen = element => element.requestFullscreen ?
-      element.requestFullscreen() :
-      Promise.resolve(element.webkitRequestFullscreen())
-  ;
+  const fullscreenchange = () => {
+    dispatchEvent(new CustomEvent('fullscreenchange'));
+  };
+
+  const requestFullscreen = element => {
+    if (element.requestFullscreen)
+      return element.requestFullscreen();
+    return new Promise($ => {
+      if (element.webkitRequestFullscreen)
+        $(element.webkitRequestFullscreen());
+      else {
+        element.addEventListener('dblclick', fullscreenchange);
+        document.body.classList.add('ld-fullscreen');
+        $(element.classList.add('fallback'));
+      }
+    });
+  };
 
   const getCoords = ({metadata}) => {
     return metadata && metadata.EXIF ? EXIF.coords(metadata.EXIF) : [];
@@ -230,6 +262,7 @@
         const onfullscreenchange = () => {
           const {ownerDocument} = this;
           if (!ownerDocument.fullscreenElement && !ownerDocument.webkitFullscreenElement) {
+            document.body.classList.remove('ld-fullscreen');
             const {map, geo} = ref(this);
             map.style.opacity = 0;
             geo.style.opacity = 0;
