@@ -19,7 +19,8 @@
     position: absolute;
     bottom: 16px;
     left: 16px;
-    width: 30%;
+    max-width: 30%;
+    max-height: 50%;
   }
   footer[is="ld-fullscreen"].fallback {
     position: fixed;
@@ -112,6 +113,8 @@
   import IMAGE from '/js/image.js';
   import EXIF from '/js/exif.js';
 
+  const handlers = ['dragging', 'touchZoom', 'doubleClickZoom', 'scrollWheelZoom', 'boxZoom', 'tap'];
+
   let leafLet, marker;
   let fallback = false;
 
@@ -162,6 +165,7 @@
   };
 
   const mapSetup = (el, coords) => new Promise($ => {
+    el.style.visibility = 'visible';
     if (leafLet) {
       marker.setLatLng(coords);
       leafLet.panTo(coords);
@@ -210,9 +214,20 @@
 
         const showContent = file => {
           const {full, title} = file;
-          const media = IMAGE.test(full) ?
-                          html.for(file)`<img src=${full} title=${title}>` :
-                          html.for(file)`<video controls src=${full} />`;
+          let media;
+          if (IMAGE.test(full)) {
+            const onload = ({currentTarget: {style}}) => {
+              style.visibility = 'visible';
+              showDetails(file);
+            };
+            media = html.for(file)`
+              <img style="visibility:hidden"
+                   onload=${onload} title=${title} src=${full}>
+            `;
+          }
+          else
+            media = html.for(file)`<video controls src=${full} />`;
+
           view(this, file, media, showMap);
           showDetails(file);
 
@@ -281,8 +296,9 @@
         addEventListener('webkitfullscreenchange', onfullscreenchange);
 
         showContent(files[i]);
-        ref(this).map.style.display = 'block';
-
+        const {map} = ref(this);
+        map.style.display = 'block';
+        map.style.visibility = 'hidden';
       });
     }
   };

@@ -20,7 +20,7 @@ export default ({render, html, main, fullscreen: panorama}) => {
       const value = album.value.trim();
       if (value.length) {
         submit.disabled = true;
-        history.pushState(null, album, `/album/${encodeURIComponent(value)}`);
+        history.pushState(null, album, `/album/${value}`);
         lifeDiary.showAlbum(value);
       }
     };
@@ -36,7 +36,7 @@ export default ({render, html, main, fullscreen: panorama}) => {
   const showAlbum = event => {
     const {detail: album} = event;
     lifeDiary.showAlbum(album);
-    history.pushState(null, album, `/album/${encodeURIComponent(album)}`);
+    history.pushState(null, album, `/album/${album}`);
   };
 
   const renderMedia = (where, album, files) => {
@@ -93,7 +93,8 @@ export default ({render, html, main, fullscreen: panorama}) => {
     },
 
     showAlbum(album) {
-      json(`/album/${encodeURIComponent(album)}.json`).then(files => {
+      const encoded = encodeURIComponent(album);
+      json(`/album/${encoded}.json`).then(files => {
         const uploadFiles = event => {
           const form = event.currentTarget.closest('form');
           const {upload} = form;
@@ -138,7 +139,7 @@ export default ({render, html, main, fullscreen: panorama}) => {
                 const body = new FormData();
                 body.append('upload', uploads[i]);
                 fetch(
-                  `${form.action}?album=${encodeURIComponent(album)}`,
+                  `${form.action}?album=${encoded}`,
                   {method, body}
                 )
                 .then(res => res.json())
@@ -178,14 +179,17 @@ export default ({render, html, main, fullscreen: panorama}) => {
             alert('Please confirm lock-screen to upload');
           });
         };
-        const list = {};
-        const progress = {};
+
         const home = event => {
           event.preventDefault();
           event.stopImmediatePropagation();
           lifeDiary.listAlbums();
           history.pushState(null, 'Life Diary ❤️', '/');
         };
+
+        const list = {};
+        const progress = {};
+
         render(main, html`
           <form class="album" onsubmit=${event => event.preventDefault()} method="post" action="/upload" enctype="multipart/form-data">
             <h1><button title="Home" is="ld-remover" onclick=${home}>🏡</button> ${album}</h1>
@@ -197,6 +201,7 @@ export default ({render, html, main, fullscreen: panorama}) => {
           </form>
           <div class="album" ref=${list}></div>
         `);
+
         renderMedia(list.current, album, files);
       });
     }
