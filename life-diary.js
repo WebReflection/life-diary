@@ -297,7 +297,9 @@ app.get('/size', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   log``;
   log`# Life Diary ❤️ `;
-  log` -version-  ${require(join(__dirname, 'package.json')).version} -exiftool- ${EXIF}`;
+  log` -version-  ${
+    require(join(__dirname, 'package.json')).version
+  } -exiftool- ${EXIF}`;
   for (const ip of IPv4())
     log` -visit-    **''http://${ip}:${PORT}/''**`;
   log` -folder-   ${FOLDER}`;
