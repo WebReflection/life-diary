@@ -297,6 +297,7 @@ app.get('/size', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   log``;
   log`# life-diary ❤️ `;
+  log` -version-  ${require(join(__dirname, 'package.json')).version}`;
   for (const ip of IPv4())
     log` -visit-    **''http://${ip}:${PORT}/''**`;
   log` -folder-   ${FOLDER}`;
