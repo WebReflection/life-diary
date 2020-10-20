@@ -89,9 +89,8 @@ To start with, I am not a designer, so that I'd love to have some help improving
 #### Client Side
 
   * I've made it work, I've made it (*kinda*) fast, now I need your help to make it *beautiful*
-  * swipe right and left, on mobile, to change images/videos while visualizing in *fullscreen*
+  * fix all mobile phones related gothas: *fullscreen* and/or its navigation (swipe L/R), styles, etc
   * clean up the *spaghetti* `index.js`, its routing is awkward and everything feels rushed (well, I did this in a day, on a Sunday, so ... that's actually accurate)
-  * make it as mobile friendly as possible so that all operations work, but also in a *UX* friendly way
 
 If you have an other suggestion for either client or server side, I'm listening!
 
