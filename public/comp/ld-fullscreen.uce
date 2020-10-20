@@ -1,5 +1,5 @@
 <style>
-  footer[is="ld-footer"] {
+  footer[is="ld-fullscreen"] {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -7,14 +7,14 @@
     margin: 0;
     background-color: black;
   }
-  footer[is="ld-footer"].details div {
+  footer[is="ld-fullscreen"].details div {
     opacity: 1;
   }
-  footer[is="ld-footer"].live > button {
+  footer[is="ld-fullscreen"].live > button {
     display: block;
   }
-  footer[is="ld-footer"].map img,
-  footer[is="ld-footer"].map video {
+  footer[is="ld-fullscreen"].map img,
+  footer[is="ld-fullscreen"].map video {
     z-index: 999;
     position: absolute;
     bottom: 16px;
@@ -67,9 +67,29 @@
   }
 </style>
 
-<footer is="ld-footer"></footer>
+<footer is="ld-fullscreen"></footer>
 
 <script type="module">
+
+  /**
+   * ISC License
+   *
+   * Copyright (c) 2020, Andrea Giammarchi, @WebReflection
+   *
+   * Permission to use, copy, modify, and/or distribute this software for any
+   * purpose with or without fee is hereby granted, provided that the above
+   * copyright notice and this permission notice appear in all copies.
+   *
+   * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+   * REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+   * AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+   * INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+   * LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+   * OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+   * PERFORMANCE OF THIS SOFTWARE.
+   *
+   */
+
   import {render, html, ref} from '@uce';
   import IMAGE from '/js/image.js';
   import EXIF from '/js/exif.js';
@@ -89,7 +109,7 @@
         <p>${file.description || '​'}</p>
       </div>
       <div ref="map" ontransitionend=${ontransitionend}></div>
-      <button ref="geo" title="Map"
+      <button ref="geo"
         ontransitionend=${ontransitionend}
         onclick=${showMap}>🗺️</button>
     `)
@@ -143,10 +163,12 @@
           if (coords.length) {
             if (map.style.opacity == 1) {
               this.classList.remove('map');
+              geo.title = 'Open Map';
               map.style.opacity = 0;
             }
             else  {
               this.classList.add('map');
+              geo.title = 'Close Map';
               displayAndShow(map);
               mapSetup(map, coords);
             };
