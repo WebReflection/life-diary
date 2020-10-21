@@ -19,6 +19,7 @@
  *
  */
 
+const {execFile} = require('child_process');
 const {extname, join, resolve} = require('path');
 const {rmdir, unlink, mkdir, readFile, readdir, writeFile} = require('fs');
 
@@ -49,6 +50,9 @@ const pass = (req, res, pass) => {
   }
   return access;
 };
+
+const LATITUDE = new Set(['North', 'South']);
+const LONGITUDE = new Set(['East', 'West']);
 
 const {parse, stringify} = JSON;
 const PUBLIC = join(__dirname, 'public');
@@ -155,6 +159,9 @@ app.post('/upload', (req, res) => {
     res.send('null');
 });
 
+
+
+// PUT
 app.put('/album/:name/:file', (req, res) => {
   if (!pass(req, res, PASSWORD_WRITE))
     return;
@@ -163,6 +170,28 @@ app.put('/album/:name/:file', (req, res) => {
   if (!body || resolve(image).indexOf(FOLDER)) {
     warn`Illegal file *put* operation: \`${image}\``;
     res.send('NO');
+  }
+  else if (body.coords) {
+    const {
+      GPSLatitude, GPSLongitude,
+      GPSLatitudeRef, GPSLongitudeRef
+    } = body.coords;
+    if (
+      typeof GPSLatitude !== 'number' || isNaN(GPSLatitude) ||
+      typeof GPSLongitude !== 'number' || isNaN(GPSLongitude) ||
+      !LATITUDE.has(GPSLatitudeRef) || !LONGITUDE.has(GPSLongitudeRef)
+    )
+      res.send('NO');
+    else
+      execFile('exiftool', [
+        `-GPSLatitude=${GPSLatitude}`,
+        `-GPSLongitude=${GPSLongitude}`,
+        `-GPSLatitudeRef=${GPSLatitudeRef}`,
+        `-GPSLongitudeRef=${GPSLongitudeRef}`,
+        '-overwrite_original', '-P', image
+      ], error => {
+        res.send(error ? 'NO' : 'OK');
+      });
   }
   else {
     const path = join(FOLDER, name, '.json', file);
