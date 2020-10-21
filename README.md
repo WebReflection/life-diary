@@ -82,8 +82,8 @@ To start with, I am not a designer, so that I'd love to have some help improving
   * *import* existing folders, instead of needing *HTTP* to upload all content
   * *backup* automatically each content to a specific destination (maybe via *rsync*? ... still thinking about it)
   * automatically *restore* or *fix* possibly corrupted data, as example for those cases when a user force-closes the browsers while uplading
-  * provide a `PUT` end point to set or update *EXIF* data, whenever it's possible
-  * provide a `PUT` end point to set or update images descriptions
+  * provide a `PUT` end point to set or update *EXIF* data, whenever it's possible (**done**)
+  * provide a `PUT` end point to set or update images descriptions (**done**)
   * provide a `GET` end point to grab Geo location details (country at least, but city/place would be awesome too), without needing to use the Internet to retrieve such information
 
 

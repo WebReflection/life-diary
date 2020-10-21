@@ -47,6 +47,11 @@ module.exports = (folder, upload, full) => new Promise($ => {
   };
   exif(image).then(metadata => {
     data.metadata = metadata;
+    console.log(metadata);
+    if (metadata && metadata.EXIF) {
+      data.title = metadata.EXIF.ImageDescription || '';
+      data.description = metadata.EXIF.UserComment || '';
+    }
     (
       IMAGE.test(image) && !/\.svg$/i.test(image) ?
         preview(image, json, full) :

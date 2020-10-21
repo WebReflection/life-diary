@@ -204,7 +204,21 @@ app.put('/album/:name/:file', (req, res) => {
           info.title = body.title || '';
           info.description = body.description || '';
           writeFile(path, stringify(info), err => {
-            res.send(err ? 'NO' : 'OK');
+            if (err)
+              res.send('NO');
+            else {
+              const args = [];
+              if (body.title)
+                args.push(`-IFD0:ImageDescription=${body.title}`);
+              if (body.description)
+                args.push(`-ExifIFD:UserComment=${body.description}`);
+              if (args.length) {
+                args.push('-overwrite_original', '-P', image);
+                execFile('exiftool', args, () => res.send('OK'));
+              }
+              else
+                res.send('OK');
+            }
           });
         }
         catch (o_O) {

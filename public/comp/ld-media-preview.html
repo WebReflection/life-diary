@@ -109,6 +109,20 @@
     return element.textContent.trim();
   };
 
+  const getTitle = data => {
+    let {title} = data;
+    if (!title && data.EXIF)
+      title = data.EXIF.ImageDescription;
+    return title || '';
+  };
+
+  const getDescription = data => {
+    let {description} = data;
+    if (!description && data.EXIF)
+      description = data.EXIF.UserComment;
+    return description || '';
+  };
+
   export default {
 
     props: {data: {src:'', title: '', description: ''}},
@@ -119,7 +133,7 @@
         event.stopImmediatePropagation();
         const {currentTarget} = event;
         const {data} = element;
-        if (confirm(`Are you sure to delete ${data.full}?\n${data.title} ${data.description}`)) {
+        if (confirm(`Are you sure to delete ${data.full}?\n${getTitle(data)} ${getDescription(data)}`)) {
           currentTarget.disabled = true;
           fetch(data.full, {method: 'DELETE'})
             .then(res => res.text()).then(result => {
@@ -169,16 +183,17 @@
         }
       },
       get media() {
-        const {full, preview, title, description} = element.data;
+        const {full, preview} = element.data;
         switch (true) {
           case IMAGE.test(full):
+            const title = getTitle(element.data);
             return html.for(element, 'img')`<img src=${preview} title=${title}>`;
           default:
             return html.for(element, 'img')`<video controls src=${preview} />`;
         }
       },
-      get title() { return element.data.title; },
-      get description() { return element.data.description; }
+      get title() { return getTitle(element.data); },
+      get description() { return getDescription(element.data); }
     })
   };
 </script>
