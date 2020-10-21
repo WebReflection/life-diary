@@ -85,6 +85,7 @@ To start with, I am not a designer, so that I'd love to have some help improving
   * provide a `PUT` end point to set or update *EXIF* data, whenever it's possible (**done**)
   * provide a `PUT` end point to set or update images descriptions (**done**)
   * provide a `GET` end point to grab Geo location details (country at least, but city/place would be awesome too), without needing to use the Internet to retrieve such information
+  * provide a `GET` end point to download an album as `.zip` folder, so that a single album can be used for any other purpose
 
 
 #### Client Side
