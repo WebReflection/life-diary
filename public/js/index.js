@@ -29,7 +29,7 @@ Promise.all([
   loader({
     on(name) {
       if (name !== 'uce-template') {
-        fetch(`/comp/${name}.uce`).then(b => b.text()).then(content => {
+        fetch(`/comp/${name}.html`).then(b => b.text()).then(content => {
           document.body.appendChild(Template.from(content));
         });
       }
