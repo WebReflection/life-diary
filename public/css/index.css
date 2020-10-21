@@ -1,0 +1,65 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+}
+
+body > main {
+  max-width: 826px;
+  margin: auto;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+main > * {
+  width: 100%;
+  padding: 0;
+}
+
+form > fieldset {
+  border: 0;
+}
+
+fieldset > legend {
+  display: none;
+}
+
+form.album {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  min-height: 100px;
+}
+
+form.album > h1 {
+  flex-grow: 1;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+form.album > h1 > button {
+  padding: 16px;
+}
+
+div.album {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+button[is="ld-remover"] {
+  display: none;
+}
+
+@media screen and (min-device-width: 1200px) {
+  body > main {
+    max-width: 1100px;
+  }
+}

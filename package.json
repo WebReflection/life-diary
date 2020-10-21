@@ -1,0 +1,40 @@
+{
+  "name": "life-diary",
+  "version": "0.0.20",
+  "description": "Life Diary ❤️ your albums, your journey, your data",
+  "bin": {
+    "life-diary": "life-diary.js"
+  },
+  "scripts": {
+    "test": "node ./life-diary.js ./test"
+  },
+  "keywords": [
+    "album",
+    "journey",
+    "diary",
+    "home",
+    "local",
+    "network"
+  ],
+  "author": "Andrea Giammarchi",
+  "license": "ISC",
+  "dependencies": {
+    "basic-auth": "^2.0.1",
+    "body-parser": "^1.19.0",
+    "compression": "^1.7.4",
+    "essential-md": "^0.3.1",
+    "express": "^4.17.1",
+    "express-fileupload": "^1.2.0",
+    "mime-types": "^2.1.27",
+    "sharp": "^0.26.2"
+  },
+  "main": "life-diary.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WebReflection/life-diary.git"
+  },
+  "bugs": {
+    "url": "https://github.com/WebReflection/life-diary/issues"
+  },
+  "homepage": "https://github.com/WebReflection/life-diary#readme"
+}

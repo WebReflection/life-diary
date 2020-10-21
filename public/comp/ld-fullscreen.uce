@@ -1,0 +1,307 @@
+<style>
+  footer[is="ld-fullscreen"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    background-color: black;
+  }
+  footer[is="ld-fullscreen"].details div {
+    opacity: 1;
+  }
+  footer[is="ld-fullscreen"].live > button {
+    display: block;
+  }
+  footer[is="ld-fullscreen"].map img,
+  footer[is="ld-fullscreen"].map video {
+    z-index: 999;
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    max-width: 30%;
+    max-height: 50%;
+  }
+  footer[is="ld-fullscreen"].fallback {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 999;
+  }
+  body.ld-fullscreen > *:not(footer[is="ld-fullscreen"]) {
+    visibility: hidden;
+  }
+</style>
+
+<style scoped>
+  div, img, video {
+    max-width: 100%;
+    max-height: 100%;
+  }
+  div.details {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 16px;
+    color: white;
+    background: rgba(0, 0, 0, .7);
+    opacity: 0;
+  }
+  div[ref="map"] {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    opacity: 0;
+  }
+  h2 {
+    margin: 0;
+  }
+  h2, p {
+    white-space: pre-line;
+  }
+  button[ref="geo"] {
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    padding: 16px;
+    font-size: 1.2rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+  }
+  img, div.details, div[ref="map"], button[ref="geo"] {
+    transition: opacity 0.3s ease-in;
+  }
+  button.fallback {
+    position: fixed;
+    padding: 16px;
+    top: 4px;
+    left: 4px;
+    z-index: 9999;
+  }
+</style>
+
+<footer is="ld-fullscreen"></footer>
+
+<script type="module">
+
+  /**
+   * ISC License
+   *
+   * Copyright (c) 2020, Andrea Giammarchi, @WebReflection
+   *
+   * Permission to use, copy, modify, and/or distribute this software for any
+   * purpose with or without fee is hereby granted, provided that the above
+   * copyright notice and this permission notice appear in all copies.
+   *
+   * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+   * REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+   * AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+   * INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+   * LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+   * OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+   * PERFORMANCE OF THIS SOFTWARE.
+   *
+   */
+
+  import {render, html, ref} from '@uce';
+  import IMAGE from '/js/image.js';
+  import EXIF from '/js/exif.js';
+
+  const handlers = ['dragging', 'touchZoom', 'doubleClickZoom', 'scrollWheelZoom', 'boxZoom', 'tap'];
+
+  let leafLet, marker;
+  let fallback = false;
+
+  const ontransitionend = ({currentTarget}) => {
+    if (currentTarget.style.opacity == 0)
+      currentTarget.style.display = 'none';
+  };
+
+  const view = (element, file, media, showMap) => {
+    render(element, html.for(element, 'view')`
+      ${media}
+      <div class="details">
+        <h2>${file.title || '​'}</h2>
+        <p>${file.description || '​'}</p>
+      </div>
+      <div ref="map" ontransitionend=${ontransitionend}></div>
+      <button ref="geo"
+        ontransitionend=${ontransitionend}
+        onclick=${showMap}>🗺️</button>
+    `)
+  };
+
+  const hideDetails = element => {
+    element.classList.remove('details');
+  };
+
+  const fullscreenchange = () => {
+    dispatchEvent(new CustomEvent('fullscreenchange'));
+  };
+
+  const requestFullscreen = element => {
+    if (element.requestFullscreen)
+      return element.requestFullscreen();
+    return new Promise($ => {
+      if (element.webkitRequestFullscreen)
+        $(element.webkitRequestFullscreen());
+      else {
+        // ... thank you iOS Safari ...
+        element.addEventListener('dblclick', fullscreenchange);
+        document.body.classList.add('ld-fullscreen');
+        $(element.classList.add('fallback'));
+      }
+    });
+  };
+
+  const getCoords = ({metadata}) => {
+    return metadata && metadata.EXIF ? EXIF.coords(metadata.EXIF) : [];
+  };
+
+  const mapSetup = (el, coords) => new Promise($ => {
+    el.style.visibility = 'visible';
+    if (leafLet) {
+      marker.setLatLng(coords);
+      leafLet.panTo(coords);
+    }
+    else {
+      leafLet = L.map(el).setView(coords, 16);
+      marker = L.marker(coords).addTo(leafLet);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(leafLet);
+    }
+  });
+
+  const displayAndShow = el => {
+    el.style.display = 'block';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.opacity = 1;
+    }));
+  };
+
+  export default {
+    fullscreen(files, i) {
+      requestFullscreen(this).then(() => {
+
+        this.classList.add('live');
+
+        const showMap = event => {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const {map, geo} = ref(this);
+          const coords = getCoords(files[i]);
+          if (coords.length) {
+            if (map.style.opacity == 1) {
+              this.classList.remove('map');
+              geo.title = 'Open Map';
+              map.style.opacity = 0;
+            }
+            else  {
+              this.classList.add('map');
+              geo.title = 'Close Map';
+              displayAndShow(map);
+              mapSetup(map, coords);
+            };
+          }
+        };
+
+        const showContent = file => {
+          const {full, title} = file;
+          let media;
+          if (IMAGE.test(full)) {
+            const onload = ({currentTarget: {style}}) => {
+              style.opacity = 1;
+              showDetails(file);
+            };
+            media = html.for(file)`
+              <img style="opacity:0"
+                   onload=${onload} title=${title} src=${full}>
+            `;
+          }
+          else
+            media = html.for(file)`<video controls src=${full} />`;
+
+          view(this, file, media, showMap);
+          showDetails(file);
+
+          const {map, geo} = ref(this);
+          const coords = getCoords(file);
+          if (coords.length) {
+            displayAndShow(geo);
+            mapSetup(map, coords);
+          }
+          else {
+            this.classList.remove('map');
+            map.style.opacity = 0;
+            geo.style.opacity = 0;
+          }
+        };
+
+        let timer = 0;
+        const showDetails = ({title, description}) => {
+          clearTimeout(timer);
+          if (title || description) {
+            requestAnimationFrame(() => {
+              this.classList.add('details');
+            });
+            timer = setTimeout(hideDetails, 4000, this);
+          }
+          else {
+            timer = 0;
+            hideDetails(this);
+          }
+        };
+
+        const onkeydown = event => {
+          let index = i;
+          switch (event.key) {
+            case 'ArrowRight':
+              i = ++i < files.length ? i : 0;
+              break;
+            case 'ArrowLeft':
+              i = --i > -1 ? i : files.length + i;
+              break;
+          }
+          if (index !== i) {
+            ref(this).geo.blur();
+            showContent(files[i]);
+          }
+        };
+
+        const onfullscreenchange = () => {
+          const {ownerDocument} = this;
+          if (!ownerDocument.fullscreenElement && !ownerDocument.webkitFullscreenElement) {
+            document.body.classList.remove('ld-fullscreen');
+            const {map, geo} = ref(this);
+            map.style.opacity = 0;
+            geo.style.opacity = 0;
+            this.className = '';
+            view(this, {title: '', description: ''}, '', null);
+            removeEventListener('keydown', onkeydown);
+            removeEventListener('fullscreenchange', onfullscreenchange);
+            removeEventListener('webkitfullscreenchange', onfullscreenchange);
+            setTimeout(() => map.style.display = 'none', 3);
+          }
+        };
+
+        addEventListener('keydown', onkeydown);
+        addEventListener('fullscreenchange', onfullscreenchange);
+        addEventListener('webkitfullscreenchange', onfullscreenchange);
+
+        showContent(files[i]);
+
+        // avoid map interfeering with the gallery
+        const {map} = ref(this);
+        map.style.display = 'block';
+        map.style.visibility = 'hidden';
+      });
+    }
+  };
+</script>

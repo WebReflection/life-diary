@@ -1,0 +1,184 @@
+<style>
+  ld-media-preview {
+    display: block;
+    padding: 4px;
+    border: 1 px solid silver;
+    min-height: 264px;
+    width: 264px;
+  }
+</style>
+
+<style scoped>
+  img, video {
+    max-width: 256px;
+    max-height: 256px;
+  }
+  h2, p {
+    padding: 4px;
+    margin: 0;
+    white-space: pre-line;
+  }
+  h2 {
+    font-size: 1.2rem;
+  }
+  p {
+    overflow: auto;
+    max-height: 256px;
+  }
+  h2[data-value=""]::after {
+    content: "Title";
+  }
+  p[data-value=""]::after {
+    content: "Description";
+  }
+  h2[data-value=""]::after, p[data-value=""]::after {
+    opacity: .4;
+  }
+  h2:focus[data-value=""]::after, p:focus[data-value=""]::after {
+    content: "";
+  }
+  .media {
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 256px;
+    background: silver;
+    position: relative;
+    text-decoration: none;
+    border: none;
+  }
+  .media > button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
+    padding: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease-in;
+  }
+  .media:hover > button, .media > button:focus {
+    opacity: 1;
+  }
+</style>
+
+<ld-media-preview>
+  <a class="media" tabindex="0" href="#fullscreen">
+    {{media}}
+    <button is="ld-remover" title="Delete" onclick={{remove}}>❎</button>
+  </a>
+  <div>
+    <h2 ref="title" data-value={{title}} onblur={{edit}}
+        contenteditable>{{title}}</h2>
+    <p ref="description" data-value={{description}} onblur={{edit}}
+        contenteditable>{{description}}</p>
+  </div>
+</ld-media-preview>
+
+<script type="module">
+
+  /**
+   * ISC License
+   *
+   * Copyright (c) 2020, Andrea Giammarchi, @WebReflection
+   *
+   * Permission to use, copy, modify, and/or distribute this software for any
+   * purpose with or without fee is hereby granted, provided that the above
+   * copyright notice and this permission notice appear in all copies.
+   *
+   * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+   * REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+   * AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+   * INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+   * LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+   * OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+   * PERFORMANCE OF THIS SOFTWARE.
+   *
+   */
+
+  import {html, ref} from '@uce';
+  import IMAGE from '/js/image.js';
+
+  const {stringify} = JSON;
+
+  const clean = element => {
+    const {innerHTML} = element;
+    element.innerHTML = innerHTML
+                          .replace(/<br[\s/]?>/g, '\n')
+                          .replace(/(<\/(div|p)>)(<\2)/g, '$1\n$3');
+    return element.textContent.trim();
+  };
+
+  export default {
+
+    props: {data: {src:'', title: '', description: ''}},
+
+    setup: element => ({
+      remove(event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const {currentTarget} = event;
+        const {data} = element;
+        if (confirm(`Are you sure to delete ${data.full}?\n${data.title} ${data.description}`)) {
+          currentTarget.disabled = true;
+          fetch(data.full, {method: 'DELETE'})
+            .then(res => res.text()).then(result => {
+              currentTarget.disabled = false;
+              if (result === 'OK')
+                element.dispatchEvent(
+                  new CustomEvent('deleted', {detail: data})
+                );
+              else
+                alert(`Unable to delete ${data.full}`);
+            });
+          }
+      },
+      edit(event) {
+        const {currentTarget} = event;
+        const {title, description} = ref(element);
+        const {data} = element;
+        const newTitle = clean(title);
+        const newDescription = clean(description);
+        title.textContent = newTitle;
+        description.textContent = newDescription;
+        if (
+          newTitle !== data.title ||
+          newDescription !== data.description
+        ) {
+          const json = {
+            title: title.dataset.value = newTitle,
+            description: description.dataset.value = newDescription
+          };
+          const info = {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: stringify(json)
+          };
+          currentTarget.contentEditable = false;
+          fetch(data.full, info).then(b => b.text()).then(result => {
+            currentTarget.contentEditable = true;
+            if (result === 'OK') {
+              data.title = json.title;
+              data.description = json.description;
+            }
+            else
+              alert(`Unable to save updated details`);
+          });
+        }
+      },
+      get media() {
+        const {full, preview, title, description} = element.data;
+        switch (true) {
+          case IMAGE.test(full):
+            return html.for(element, 'img')`<img src=${preview} title=${title}>`;
+          default:
+            return html.for(element, 'img')`<video controls src=${preview} />`;
+        }
+      },
+      get title() { return element.data.title; },
+      get description() { return element.data.description; }
+    })
+  };
+</script>
