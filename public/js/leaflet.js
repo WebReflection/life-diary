@@ -9,7 +9,7 @@ export default {
   get mouseCoords() { return mouseCoords; },
   setup(map) {
     if (!leaflet) {
-      leaflet = L.map(map, {keyboard: false});
+      leaflet = L.map(map, {keyboard: false, minZoom: 2});
       leaflet.on('mousedown', updateCoords);
       leaflet.on('mousemove', updateCoords);
     }
