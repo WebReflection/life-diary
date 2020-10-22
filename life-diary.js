@@ -199,6 +199,7 @@ app.put('/album/:name/:file', (req, res) => {
           data.feature = feature([GPSLongitude, GPSLatitude]);
           all.push(new Promise($ => {
             execFile('exiftool', [
+              '-GPSMapDatum=WGS-84',
               `-GPSLatitude=${GPSLatitude}`,
               `-GPSLongitude=${GPSLongitude}`,
               `-GPSLatitudeRef=${GPSLatitudeRef}`,
