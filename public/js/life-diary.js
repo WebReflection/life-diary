@@ -12,25 +12,15 @@ const cursor = {
 
 export default ({render, html, main, fullscreen: panorama}) => {
 
-  const createAlbum = event => {
+  const onNameChosen = event => {
     event.preventDefault();
-    const onNameChosen = event => {
-      event.preventDefault();
-      const {album, submit} = event.currentTarget;
-      const value = album.value.trim();
-      if (value.length) {
-        submit.disabled = true;
-        history.pushState(null, album, `/album/${value}`);
-        lifeDiary.showAlbum(value);
-      }
-    };
-    history.pushState(null, 'Life Diary ❤️', '/');
-    render(main, html`
-      <form onsubmit=${onNameChosen} method="post" action="/upload" enctype="multipart/form-data">
-        <input name="album" placeholder="Album name" required autofocus>
-        <input name="submit" type="submit">
-      </form>
-    `);
+    const {album, submit} = event.currentTarget;
+    const value = album.value.trim();
+    if (value.length) {
+      submit.disabled = true;
+      history.pushState(null, album, `/album/${value}`);
+      lifeDiary.showAlbum(value);
+    }
   };
 
   const showAlbum = event => {
@@ -78,7 +68,11 @@ export default ({render, html, main, fullscreen: panorama}) => {
       json('/albums').then(albums => {
         render(main, html`
           <h1 style="text-align:center">Life Diary ❤️</h1>
-          <button style="padding:8px" onclick=${createAlbum}>Create a new album</button>
+          <form class="home" onsubmit=${onNameChosen}
+                method="post" action="/upload" enctype="multipart/form-data">
+            <input name="album" placeholder="Album name" autofocus required>
+            <input name="submit" type="submit" value="Create album">
+          </form>
           <ul>
             ${albums.map(album => html`
               <li is="ld-album"
@@ -191,11 +185,13 @@ export default ({render, html, main, fullscreen: panorama}) => {
         const progress = {};
 
         render(main, html`
-          <form class="album" onsubmit=${event => event.preventDefault()} method="post" action="/upload" enctype="multipart/form-data">
+          <form class="album" onsubmit=${event => event.preventDefault()}
+                method="post" action="/upload" enctype="multipart/form-data">
             <h1><button title="Home" is="ld-remover" onclick=${home}>🏡</button> ${album}</h1>
             <fieldset>
               <legend>Upload new files</legend>
-              <input onchange=${uploadFiles} type="file" name="upload" accept="audio/*,image/*,video/*" multiple required>
+              <input onchange=${uploadFiles} type="file" name="upload"
+                     accept="audio/*,image/*,video/*" multiple required>
               <ld-progress ref=${progress} />
             </fieldset>
           </form>
