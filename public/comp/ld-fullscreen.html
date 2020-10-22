@@ -72,7 +72,6 @@
     background: none;
     border: none;
     cursor: pointer;
-    opacity: 0;
   }
   img, div.details, div[ref="map"], button[ref="geo"] {
     transition: opacity 0.3s ease-in;
@@ -234,19 +233,17 @@
           event.stopImmediatePropagation();
           const {map, geo} = ref(this);
           const coords = getCoords(files[i]);
-          if (coords.length) {
-            if (map.style.opacity == 1) {
-              this.classList.remove('map');
-              geo.title = 'Open Map';
-              map.style.opacity = 0;
-            }
-            else  {
-              this.classList.add('map');
-              geo.title = 'Close Map';
-              displayAndShow(map);
-              mapSetup(map, coords);
-            };
+          if (map.style.opacity == 1) {
+            this.classList.remove('map');
+            geo.title = 'Open Map';
+            map.style.opacity = 0;
           }
+          else  {
+            this.classList.add('map');
+            geo.title = 'Close Map';
+            displayAndShow(map);
+            mapSetup(map, coords);
+          };
         };
 
         const showContent = file => {
@@ -270,15 +267,9 @@
 
           const {map, geo} = ref(this);
           const coords = getCoords(file);
-          if (coords.length) {
-            displayAndShow(geo);
-            mapSetup(map, coords);
-          }
-          else {
-            this.classList.remove('map');
-            map.style.opacity = 0;
-            geo.style.opacity = 0;
-          }
+
+          displayAndShow(geo);
+          mapSetup(map, coords);
         };
 
         let timer = 0;

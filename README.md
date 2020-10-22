@@ -4,6 +4,8 @@
 
 **[Youtube Showcase](https://www.youtube.com/watch?v=ClKj2yn2DNs)**
 
+
+
 ## About
 
 Storing images in the cloud, or in our favorite social, is awesome, but it comes with a price:
@@ -58,6 +60,21 @@ If there was some *EXIF* data associated to such media, a *Map* symbol should ap
 
 
 
+## Instructions
+
+  * **create** a new album by giving it a name
+  * **upload** one or more picture/video to the album using the input field
+  * **edit** title and description of each media, when needed or appropriate
+  * **show** *fullscreen* images or videos
+    * use **right** or **left** *arrow keys* to navigate the album
+    * click the **map** *button* to see Geo location data
+    * use **rightclick** do add, or update, Geo location data
+    * use *right* or *left* arrow keys to navigate in *map* mode or click the *map* button again to **close** the map
+    * **exit** *fullscreen* by either pressing `Escape` or, on Safari mobile, by double clicking when *not* on *map*
+  * go back **home** through the 🏡 *button*
+
+
+
 ## Features
 
 To know features and options, try `npx life-diary --help`, and this is a summary:
@@ -68,7 +85,7 @@ To know features and options, try `npx life-diary --help`, and this is a summary
   * unmodified images and videos qualities for enjoying these in full screen
   * interface (ugly but ...) 100% keyboard navigable, everything should be a *Tab* away
   * automatic *EXIF* data extraction, and possibility to associate data to any entry (currently *title* and *description*)
-  * automatic *Map* discovery when *EXIF* data exists, and its Geo coordinates can be converted
+  * automatic *Map* discovery when *EXIF* data exists, and its Geo coordinates can be converted, modified, or saved
 
 Most importantly, the content is always local, and beside the *Map* feature, everything should run out of the box within a local network, without ever requiring access to the Internet.
 
@@ -84,9 +101,8 @@ To start with, I am not a designer, so that I'd love to have some help improving
   * automatically *restore* or *fix* possibly corrupted data, as example for those cases when a user force-closes the browsers while uplading
   * provide a `PUT` end point to set or update *EXIF* data, whenever it's possible (**done**)
   * provide a `PUT` end point to set or update images descriptions (**done**)
-  * provide a `GET` end point to grab Geo location details (country at least, but city/place would be awesome too), without needing to use the Internet to retrieve such information
+  * provide a `GET` end point to grab Geo location details (country at least, but city/place would be awesome too), without needing to use the Internet to retrieve such information (**done**)
   * provide a `GET` end point to download an album as `.zip` folder, so that a single album can be used for any other purpose
-
 
 #### Client Side
 
