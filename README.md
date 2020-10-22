@@ -96,8 +96,8 @@ To start with, I am not a designer, so that I'd love to have some help improving
 
 #### Server Side
 
-  * *import* existing folders, instead of needing *HTTP* to upload all content
-  * *backup* automatically each content to a specific destination (maybe via *rsync*? ... still thinking about it)
+  * *import* existing folders via CLI, instead of needing *HTTP* to upload all content
+  * *backup* automatically each content to a specific destination (maybe via *rsync*? ... still thinking about it, although this can be done as cronjob or manually already, no priority for now)
   * automatically *restore* or *fix* possibly corrupted data, as example for those cases when a user force-closes the browsers while uplading
   * provide a `PUT` end point to set or update *EXIF* data, whenever it's possible (**done**)
   * provide a `PUT` end point to set or update images descriptions (**done**)

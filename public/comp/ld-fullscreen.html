@@ -134,6 +134,7 @@
   import EXIF from '/js/exif.js';
   import Leaflet from '/js/leaflet.js';
   import contextmenu from '/js/contextmenu.js';
+  import swiped from '/js/swiped.js';
 
   const DELAY = 4000;
   const {stringify, parse} = JSON;
@@ -150,7 +151,7 @@
     const {properties: {emojiFlag, nameEn}} = (feature || {properties:{}});
     const small = `${emojiFlag || ''} ${nameEn || ''}`;
     render(element, html.for(element, 'view')`
-      ${media}
+      <div ref="swiper">${media}</div>
       <div class="details">
         <h2>${title || '​'}</h2>
         <p>${description || '​'}</p>
@@ -211,7 +212,7 @@
     }));
   };
 
-  const mapContextMenu = new WeakMap;
+  const instrumentedMap = new WeakMap;
 
   export default {
     fullscreen(files, i) {
@@ -219,6 +220,21 @@
 
         this.classList.add('live');
 
+        const moveRight = () => {
+          i = ++i < files.length ? i : 0;
+        };
+
+        const moveLeft = () => {
+          i = --i > -1 ? i : files.length + i;
+        };
+
+        const showFile = index => {
+          if (index !== i) {
+            ref(this).geo.blur();
+            showContent(files[i]);
+          }
+        };
+        
         const showMap = event => {
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -281,16 +297,13 @@
           let index = i;
           switch (event.key) {
             case 'ArrowRight':
-              i = ++i < files.length ? i : 0;
+              moveRight();
               break;
             case 'ArrowLeft':
-              i = --i > -1 ? i : files.length + i;
+              moveLeft();
               break;
           }
-          if (index !== i) {
-            ref(this).geo.blur();
-            showContent(files[i]);
-          }
+          showFile(index);
         };
 
         const onfullscreenchange = () => {
@@ -319,11 +332,24 @@
         showContent(files[i]);
 
         // avoid map interfeering with the gallery
-        const {map} = ref(this);
+        const {map, swiper} = ref(this);
         map.style.display = 'block';
         map.style.visibility = 'hidden';
-        if (!mapContextMenu.has(map))
-          mapContextMenu.set(map, contextmenu(map, [
+        if (!instrumentedMap.has(map)) {
+          instrumentedMap.set(map, true);
+          swiped(swiper, {
+            left: () => {
+              let index = i;
+              moveRight();
+              showFile(index);
+            },
+            right: () => {
+              let index = i;
+              moveLeft();
+              showFile(index);
+            }
+          });
+          contextmenu(map, [
             {
               text: '🗺️ Update Geo Location',
               action: event => {
@@ -357,7 +383,8 @@
                 });
               }
             }
-          ]));
+          ]);
+        }
       });
     }
   };
