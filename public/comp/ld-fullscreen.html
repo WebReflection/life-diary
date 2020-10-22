@@ -90,6 +90,20 @@
     left: 4px;
     z-index: 9999;
   }
+  .contextmenu {
+    min-width: 100px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, .3);
+    border-radius: 4px;
+  }
+  .contextmenu > .item {
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease-in;
+  }
+  .contextmenu > .item:hover {
+    transform: scale(1.1) 0.3s ease-in;
+  }
 </style>
 
 <footer is="ld-fullscreen"></footer>
@@ -119,6 +133,7 @@
   import IMAGE from '/js/image.js';
   import EXIF from '/js/exif.js';
   import Leaflet from '/js/leaflet.js';
+  import contextmenu from '/js/contextmenu.js';
 
   const DELAY = 4000;
   const {stringify, parse} = JSON;
@@ -141,16 +156,7 @@
         <p>${description || '​'}</p>
         <small>${small}</small>
       </div>
-      <div contextmenu="leaflet-edit" ref="map"
-        .data=${file}
-        ontransitionend=${ontransitionend} />
-      <menu type="context" id="leaflet-edit">
-        <menuitem type="command" label="Update Geo Location"
-          onclick=${updateGeoLocation}>
-          🗺️ Update Geo Location
-        </menuitem>
-        <hr>
-      </menu>
+      <div ref="map" .data=${file} ontransitionend=${ontransitionend} />
       <button ref="geo" onclick=${showMap}>🗺️</button>
     `)
   };
@@ -205,36 +211,7 @@
     }));
   };
 
-  const updateGeoLocation = event => {
-    const {currentTarget, pageX, pageY} = event;
-    const {map} = ref(currentTarget.closest('[is="ld-fullscreen"]'));
-    const {data} = map;
-    const [GPSLatitude, GPSLongitude] = Leaflet.mouseCoords;
-    const GPSLatitudeRef = GPSLatitude < 0 ? 'South' : 'North';
-    const GPSLongitudeRef = GPSLongitude < 0 ? 'West' : 'East';
-    const info = {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: stringify({
-        coords: {
-          GPSLatitude, GPSLatitudeRef,
-          GPSLongitude, GPSLongitudeRef
-        }
-      })
-    };
-    fetch(data.full, info).then(b => b.text()).then(result => {
-      if (result === 'NO')
-        alert(`Unable to updated Geo location`);
-      else {
-        data.coords = [GPSLatitude, GPSLongitude];
-        mapSetup(map, data.coords);
-        if (result)
-          data.feature = parse(result);
-      }
-    });
-  };
+  const mapContextMenu = new WeakMap;
 
   export default {
     fullscreen(files, i) {
@@ -345,6 +322,42 @@
         const {map} = ref(this);
         map.style.display = 'block';
         map.style.visibility = 'hidden';
+        if (!mapContextMenu.has(map))
+          mapContextMenu.set(map, contextmenu(map, [
+            {
+              text: '🗺️ Update Geo Location',
+              action: event => {
+                const {clientX, clientY} = event;
+                const {map} = ref(this);
+                const {data} = map;
+                const [GPSLatitude, GPSLongitude] = Leaflet.mouseCoords;
+                const GPSLatitudeRef = GPSLatitude < 0 ? 'South' : 'North';
+                const GPSLongitudeRef = GPSLongitude < 0 ? 'West' : 'East';
+                const info = {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: stringify({
+                    coords: {
+                      GPSLatitude, GPSLatitudeRef,
+                      GPSLongitude, GPSLongitudeRef
+                    }
+                  })
+                };
+                fetch(data.full, info).then(b => b.text()).then(result => {
+                  if (result === 'NO')
+                    alert(`Unable to updated Geo location`);
+                  else {
+                    data.coords = [GPSLatitude, GPSLongitude];
+                    mapSetup(map, data.coords);
+                    if (result)
+                      data.feature = parse(result);
+                  }
+                });
+              }
+            }
+          ]));
       });
     }
   };
