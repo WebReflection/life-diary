@@ -29,8 +29,8 @@ class Menu {
   isMenuClick(event) {
     const {currentTarget, target, eventPhase} = event;
     let result = 0;
-    if (eventPhase === 1)
-      result = target.closest('.contextmenu') ? 1 : 0;
+    if (eventPhase === 1 && target.closest('.contextmenu'))
+      result = 1;
     else if (currentTarget.ownerDocument)
       result = 2;
     if (result) {
