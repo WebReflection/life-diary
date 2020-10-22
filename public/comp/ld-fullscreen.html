@@ -325,6 +325,7 @@
             this.className = '';
             view(this, {title: '', description: ''}, '', null);
             this.removeEventListener('mousemove', onmousemove);
+            this.removeEventListener('pointerdown', onmousemove);
             removeEventListener('keydown', onkeydown);
             removeEventListener('fullscreenchange', onfullscreenchange);
             removeEventListener('webkitfullscreenchange', onfullscreenchange);
@@ -333,6 +334,7 @@
         };
 
         this.addEventListener('mousemove', onmousemove);
+        this.addEventListener('pointerdown', onmousemove);
         addEventListener('keydown', onkeydown);
         addEventListener('fullscreenchange', onfullscreenchange);
         addEventListener('webkitfullscreenchange', onfullscreenchange);
