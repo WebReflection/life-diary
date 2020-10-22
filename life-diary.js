@@ -22,6 +22,7 @@
 const {execFile} = require('child_process');
 const {extname, join, resolve} = require('path');
 const {rmdir, unlink, mkdir, readFile, readdir, writeFile} = require('fs');
+const {tmpdir} = require('os');
 
 const {feature} = require('country-coder');
 const {log, warn} = require('essential-md');
@@ -302,6 +303,26 @@ app.get('/albums', (req, res) => {
   if (!pass(req, res, PASSWORD_READ))
     return;
   files(FOLDER).then(noCache.bind(res));
+});
+
+app.get('/download/:name', (req, res) => {
+  if (!pass(req, res, PASSWORD_READ))
+    return;
+  const {params: {name}} = req;
+  const album = join(FOLDER, name);
+  if (resolve(album).indexOf(FOLDER)) {
+    warn`Illegal folder *get* operation: \`${album}\``;
+    res.send('NO');
+  }
+  else {
+    const tmpName = join(tmpdir(), name + '.zip');
+    execFile('zip', ['-q', '-r', tmpName, album], err => {
+      if (err)
+        res.send('Unable to zip ' + album);
+      else
+        res.sendFile(tmpName);
+    });
+  }
 });
 
 

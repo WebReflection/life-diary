@@ -44,6 +44,7 @@
     <h1>
       <button title="Home" class="remover" onclick={{home}}>🏡</button>
       {{album}}
+      <button title="Download" class="remover" onclick={{download}}>⬇️</button>
     </h1>
     <fieldset>
       <legend>Upload new files</legend>
@@ -88,6 +89,11 @@
     }
   };
 
+  const preventDefault = event => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+
   export default {
     props: {data: {}},
 
@@ -129,14 +135,15 @@
       };
 
       return {
+        preventDefault,
         get album() { return element.data.album; },
-        preventDefault(event) {
-          event.preventDefault();
-        },
         home(event) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
+          preventDefault(event);
           element.data.listAlbums();
+        },
+        download(event) {
+          preventDefault(event);
+          location.href = `/download/${encodeURIComponent(element.data.album)}`;
         },
         uploadFiles() {
           const {data} = element;
