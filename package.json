@@ -1,6 +1,6 @@
 {
   "name": "life-diary",
-  "version": "0.0.33",
+  "version": "0.0.34",
   "description": "Life Diary ❤️ your albums, your journey, your data",
   "bin": {
     "life-diary": "life-diary.js"
