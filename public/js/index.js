@@ -21,6 +21,7 @@ Promise.all([
   import('./life-diary.js'),
   import('./3rd/uce-loader.js'),
   import('./3rd/uce-template.js'),
+  // import('https://unpkg.com/uce-template?module'),
   import('./wake-lock.js')
 ]).then(([{default: setup}, {loader}]) => {
 

@@ -75,6 +75,10 @@
     background: none;
     border: none;
     cursor: pointer;
+    opacity: 0;
+  }
+  button[ref="geo"]:focus, button[ref="geo"]:hover {
+    opacity: 1;
   }
   img, div.details, div[ref="map"], button[ref="geo"] {
     transition: opacity 0.3s ease-in;
@@ -116,6 +120,7 @@
   import EXIF from '/js/exif.js';
   import Leaflet from '/js/leaflet.js';
 
+  const DELAY = 4000;
   const {stringify, parse} = JSON;
 
   let fallback = false;
@@ -146,9 +151,7 @@
         </menuitem>
         <hr>
       </menu>
-      <button ref="geo"
-        ontransitionend=${ontransitionend}
-        onclick=${showMap}>🗺️</button>
+      <button ref="geo" onclick=${showMap}>🗺️</button>
     `)
   };
 
@@ -158,6 +161,14 @@
 
   const fullscreenchange = () => {
     dispatchEvent(new CustomEvent('fullscreenchange'));
+  };
+
+  const onmousemove = ({currentTarget}) => {
+    const {style} = currentTarget.querySelector('button[ref="geo"]');
+    if (style.opacity != 1) {
+      style.opacity = 1;
+      setTimeout(() => { style.opacity = null; }, DELAY);
+    }
   };
 
   const requestFullscreen = element => {
@@ -271,7 +282,6 @@
           const {map, geo} = ref(this);
           const coords = getCoords(file);
 
-          displayAndShow(geo);
           mapSetup(map, coords);
         };
 
@@ -282,7 +292,7 @@
             requestAnimationFrame(() => {
               this.classList.add('details');
             });
-            timer = setTimeout(hideDetails, 4000, this);
+            timer = setTimeout(hideDetails, DELAY, this);
           }
           else {
             timer = 0;
@@ -312,9 +322,9 @@
             document.body.classList.remove('ld-fullscreen');
             const {map, geo} = ref(this);
             map.style.opacity = 0;
-            geo.style.opacity = 0;
             this.className = '';
             view(this, {title: '', description: ''}, '', null);
+            this.removeEventListener('mousemove', onmousemove);
             removeEventListener('keydown', onkeydown);
             removeEventListener('fullscreenchange', onfullscreenchange);
             removeEventListener('webkitfullscreenchange', onfullscreenchange);
@@ -322,6 +332,7 @@
           }
         };
 
+        this.addEventListener('mousemove', onmousemove);
         addEventListener('keydown', onkeydown);
         addEventListener('fullscreenchange', onfullscreenchange);
         addEventListener('webkitfullscreenchange', onfullscreenchange);

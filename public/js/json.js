@@ -1,0 +1,1 @@
+export default file => fetch(file).then(b => b.json());

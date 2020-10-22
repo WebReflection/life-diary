@@ -1,0 +1,85 @@
+<style>
+  ld-home {
+    display: block;
+  }
+</style>
+
+<style scoped>
+  form {
+    display: flex;
+    justify-content: center;
+  }
+
+  h1 {
+    text-align: center;
+  }
+
+  input {
+    min-height: 32px;
+    padding: 4px;
+  }
+</style>
+
+<ld-home>
+  <h1>Life Diary ❤️</h1>
+  <form ref="form" onsubmit={{onNameChosen}}
+        method="post" action="/upload" enctype="multipart/form-data">
+    <input name="album" placeholder="Album name" autofocus required>
+    <input name="submit" type="submit" value="Create album">
+  </form>
+  <ul>
+    {{albums}}
+  </ul>
+</ld-home>
+
+<script type="module">
+
+  /**
+   * ISC License
+   *
+   * Copyright (c) 2020, Andrea Giammarchi, @WebReflection
+   *
+   * Permission to use, copy, modify, and/or distribute this software for any
+   * purpose with or without fee is hereby granted, provided that the above
+   * copyright notice and this permission notice appear in all copies.
+   *
+   * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+   * REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+   * AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+   * INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+   * LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+   * OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+   * PERFORMANCE OF THIS SOFTWARE.
+   *
+   */
+
+  import {html, ref} from "@uce";
+
+  export default {
+    props: {data: {}},
+    setup(element) {
+      const showAlbum = ({detail}) => {
+        element.data.showAlbum(detail);
+      };
+      return {
+        onNameChosen: event => {
+          event.preventDefault();
+          const {album, submit} = ref(element).form;
+          const detail = album.value.trim().replace(/^\.+/, '');
+          if (detail.length)
+            showAlbum({detail});
+        },
+        get albums() {
+          const {albums, listAlbums} = element.data;
+          return albums.map(album => html`
+            <li is="ld-home-album"
+              ondeleted=${listAlbums}
+              onvisualize=${showAlbum}
+              .name=${album}
+            />
+          `);
+        }
+      };
+    }
+  };
+</script>

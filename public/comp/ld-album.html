@@ -1,38 +1,59 @@
 <style>
-  ul > li[is="ld-album"] {
-    list-style: none;
-    display: flex;
-    padding: 0;
-    border-radius: 4px;
-    opacity: .7;
-  }
-  ul > li[is="ld-album"]:hover {
-    opacity: 1;
-    z-index: 1;
-    box-shadow: 0 8px 6px -6px silver;
-    transform: scale(1.01);
-  }
-  ul > li[is="ld-album"] > * {
-    padding: 16px;
+  ld-album {
+    display: block;
   }
 </style>
 
 <style scoped>
-  a, a:visited {
-    flex-grow: 1;
-    color: initial;
-    font-weight: bold;
+  form > fieldset {
+    border: 0;
   }
-  small {
-    cursor: default;
+
+  fieldset > legend {
+    display: none;
+  }
+
+  form {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    min-height: 100px;
+  }
+
+  form > h1 {
+    flex-grow: 1;
+    margin: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  form > h1 > button.remover {
+    padding: 16px;
+  }
+
+  div[ref="list"] {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
   }
 </style>
 
-<li is="ld-album">
-  <a onclick={{visualize}} href={{href}}>{{this.name}}</a>
-  <small>{{this.details}}</small>
-  <button is="ld-remover" title="Delete" onclick={{remove}}>❎</button>
-</li>
+<ld-album>
+  <form ref="form" onsubmit={{preventDefault}}
+        method="post" action="/upload" enctype="multipart/form-data">
+    <h1>
+      <button title="Home" class="remover" onclick={{home}}>🏡</button>
+      {{album}}
+    </h1>
+    <fieldset>
+      <legend>Upload new files</legend>
+      <input onchange={{uploadFiles}} type="file" name="upload"
+              accept="audio/*,image/*,video/*" multiple required>
+      <ld-progress ref="progress"></ld-progress>
+    </fieldset>
+  </form>
+  <div ref="list"></div>
+</ld-album>
 
 <script type="module">
 
@@ -55,47 +76,153 @@
    *
    */
 
-  const stop = event => {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-  };
+  import {render, html, ref} from '@uce';
 
-  const style = element => {
-    element.style.transition = 'all 0.2s ease-in';
+  const cursor = {
+    char: ['⠦', '⠧', '⠇', '⠏', '⠋', '⠙', '⠹', '⠸', '⠼', '⠴'],
+    i: 0,
+    next() {
+      if (this.i < 0)
+        this.i = 0;
+      return this.char[this.i++ % this.char.length];
+    }
   };
 
   export default {
-    props: {name: this.name || '', details: ''},
-    setup(element) {
-      const encoded = () => encodeURIComponent(element.name);
-      const endPoint = () => `/album/${encoded()}`;
-      const dispatch = (type, detail) => element.dispatchEvent(
-        new CustomEvent(type, {detail})
-      );
-      Promise.all([
-        fetch(`/files/${encoded()}`).then(b => b.text()),
-        fetch(`/size/${encoded()}`).then(b => b.text())
-      ])
-      .then(([files, bytes]) => {
-        element.details = `${files} - ${bytes}`;
-      });
+    props: {data: {}},
 
-      // avoid transition moving everything around
-      setTimeout(style, 0, element);
+    setup(element) {
+
+      const renderFiles = files => {
+
+        const fullscreen = event => {
+          let {currentTarget, target} = event;
+          if (/^a$/i.test(target.nodeName))
+            target = target.firstElementChild;
+          if (/^(?:img|video)$/i.test(target.nodeName)) {
+            event.preventDefault();
+            element.data.fullscreen.fullscreen(files, files.indexOf(currentTarget.data));
+          }
+        };
+
+        const removeMedia = ({detail: file}) => {
+          const i = files.indexOf(file);
+          if (-1 < i) {
+            files.splice(i, 1);
+            renderFiles(files);
+          }
+        };
+
+        render(ref(element).list, html.for(files, 'album')`
+          ${files.map(file => html.for(file, 'media-preview')`
+            <ld-media-preview
+                onclick=${fullscreen}
+                ondeleted=${removeMedia}
+                .data=${file}
+            />
+          `)}
+        `);
+      };
+
+      element.connected = () => {
+        renderFiles(element.data.files);
+      };
 
       return {
-        get href() { return endPoint(); },
-        remove(event) {
-          stop(event);
-          if (confirm(`Are you sure to delete ${element.name}?\nIt has ${element.details}`)) {
-            fetch(endPoint(), {method: 'DELETE'}).then(b => b.text()).then(() => {
-              dispatch('deleted');
-            });
-          }
+        get album() { return element.data.album; },
+        preventDefault(event) {
+          event.preventDefault();
         },
-        visualize(event) {
-          stop(event);
-          dispatch('visualize', element.name);
+        home(event) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          element.data.listAlbums();
+        },
+        uploadFiles() {
+          const {data} = element;
+          const {form, progress} = ref(element);
+          const {upload} = form;
+          const {disabled, files: uploads} = upload;
+
+          if (disabled || uploads.length < 1)
+            return;
+
+          const {reduce} = [];
+          const sum = (total, {size}) => total + size;
+
+          const method = 'POST';
+
+          navigator.wakeLock.request('screen').then(wakeLock => {
+
+            const max = reduce.call(uploads, sum, 0);
+            const {length} = uploads;
+            let uploading = true;
+            let nextValue = 0;
+            let value = 0;
+
+            progress.max = max;
+            progress.value = value;
+            progress.details = `processing 0/${length}`;
+            upload.disabled = true;
+
+            const fail = () => {
+              uploadFile(length);
+              alert(`Unable to upload ${uploads[i].name}`);
+            };
+
+            const uploadFile = i => {
+              if (i === length) {
+                data.fetching = false;
+                upload.value = '';
+                progress.details = '';
+                upload.disabled = uploading = false;
+                wakeLock.release();
+              }
+              else {
+                nextValue += uploads[i].size;
+                const encoded = encodeURIComponent(element.data.album);
+                const body = new FormData();
+                body.append('upload', uploads[i]);
+                fetch(
+                  `${form.action}?album=${encoded}`,
+                  {method, body}
+                )
+                .then(res => res.json())
+                .then(file => {
+                  if (file) {
+                    data.files.push(file);
+                    progress.details = `processing ${++i + 1}/${length}`;
+                    renderFiles(data.files);
+                    uploadFile(i);
+                  }
+                  else
+                    fail();
+                })
+                .catch(fail);
+              }
+            };
+
+            data.fetching = true;
+            uploadFile(0);
+
+            let frames = 0;
+            (function update() {
+              if (uploading) {
+                value += (nextValue - value) * .02;
+                progress.value = value;
+                if (!(frames++ % 6))
+                  progress.spinner = cursor.next();
+                requestAnimationFrame(update);
+              }
+              else {
+                progress.value = 0;
+                progress.spinner = '';
+              }
+            }());
+
+          }, () => {
+            alert('Please confirm lock-screen to upload');
+          });
         }
       };
     }
