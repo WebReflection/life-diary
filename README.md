@@ -66,7 +66,7 @@ If there was some *EXIF* data associated to such media, a *Map* symbol should ap
   * **upload** one or more picture/video to the album using the input field
   * **edit** title and description of each media, when needed or appropriate
   * **show** *fullscreen* images or videos
-    * use **right** or **left** *arrow keys* to navigate the album
+    * use **right** or **left** *arrow keys* to navigate the album, **swipe** otherwise
     * click the **map** *button* to see Geo location data
     * use **rightclick** do add, or update, Geo location data
     * use *right* or *left* arrow keys to navigate in *map* mode or click the *map* button again to **close** the map
@@ -96,20 +96,17 @@ To start with, I am not a designer, so that I'd love to have some help improving
 
 #### Server Side
 
-  * *import* existing folders via CLI, instead of needing *HTTP* to upload all content
-  * *backup* automatically each content to a specific destination (maybe via *rsync*? ... still thinking about it, although this can be done as cronjob or manually already, no priority for now)
   * automatically *restore* or *fix* possibly corrupted data, as example for those cases when a user force-closes the browsers while uplading
-  * provide a `PUT` end point to set or update *EXIF* data, whenever it's possible (**done**)
-  * provide a `PUT` end point to set or update images descriptions (**done**)
-  * provide a `GET` end point to grab Geo location details (country at least, but city/place would be awesome too), without needing to use the Internet to retrieve such information (**done**)
-  * provide a `GET` end point to download an album as `.zip` folder, so that a single album can be used for any other purpose
+  * proxy OpenStreetMap tiles to avoid abusing their servers and make tiles available offline too ('cause live rendering on a Raspberry Pi is out of question)
   * *maybe* order by creation time, instead of name ...
   * *maybe* add a search per title, description, and/or country, within the *home* page
+  * *maybe* import existing folders via CLI, instead of needing *HTTP* to upload all content (not much value, but maybe handy)
+  * *maybe* backup automatically each content to a specific destination (maybe via *rsync*? ... still thinking about it, although this can be done as cronjob or manually already, no priority for now)
+  * *maybe* * provide a `GET` end point to download an album as `.zip` folder, so that a single album can be used for any other purpose (is this useful though? the folder is already in the drive)
 
 #### Client Side
 
   * I've made it work, I've made it (*kinda*) fast, now I need your help to make it *beautiful*
-  * fix all mobile phones related gothas: *fullscreen* and/or its navigation (swipe L/R), styles, etc
 
 If you have an other suggestion for either client or server side, I'm listening!
 
