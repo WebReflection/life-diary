@@ -2,6 +2,9 @@ const {execFile} = require('child_process');
 const {readFile, writeFile} = require('fs');
 const {join} = require('path');
 
+const EXIF = require(join(__dirname, '..', 'public', 'js', 'exif.js'));
+
+const {feature} = require('country-coder');
 const mime = require('mime-types');
 const sharp = require('sharp');
 const cover = sharp.fit.cover;
@@ -39,18 +42,22 @@ module.exports = (folder, upload, full) => new Promise($ => {
   const image = join(folder, upload);
   const json = join(folder, '.json', upload);
   const data = {
-    metadata: null,
+    full,
     title: '',
     description: '',
     preview: '',
-    full
+    coords: [],
+    feature: null,
+    metadata: null
   };
   exif(image).then(metadata => {
     data.metadata = metadata;
-    console.log(metadata);
     if (metadata && metadata.EXIF) {
       data.title = metadata.EXIF.ImageDescription || '';
       data.description = metadata.EXIF.UserComment || '';
+      data.coords = EXIF.coords(metadata.EXIF);
+      if (data.coords.length)
+        data.feature = feature([data.coords[1], data.coords[0]]);
     }
     (
       IMAGE.test(image) && !/\.svg$/i.test(image) ?

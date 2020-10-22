@@ -23,6 +23,7 @@ const {execFile} = require('child_process');
 const {extname, join, resolve} = require('path');
 const {rmdir, unlink, mkdir, readFile, readdir, writeFile} = require('fs');
 
+const {feature} = require('country-coder');
 const {log, warn} = require('essential-md');
 
 const include = util => require(join(__dirname, 'utils', `${util}.js`));
@@ -171,66 +172,81 @@ app.put('/album/:name/:file', (req, res) => {
     warn`Illegal file *put* operation: \`${image}\``;
     res.send('NO');
   }
-  else if (body.coords) {
-    const {
-      GPSLatitude, GPSLongitude,
-      GPSLatitudeRef, GPSLongitudeRef
-    } = body.coords;
-    if (
-      typeof GPSLatitude !== 'number' || isNaN(GPSLatitude) ||
-      typeof GPSLongitude !== 'number' || isNaN(GPSLongitude) ||
-      !LATITUDE.has(GPSLatitudeRef) || !LONGITUDE.has(GPSLongitudeRef)
-    )
+  const path = join(FOLDER, name, '.json', file);
+  readFile(path, (err, buffer) => {
+    if (err) {
       res.send('NO');
-    else
-      execFile('exiftool', [
-        `-GPSLatitude=${GPSLatitude}`,
-        `-GPSLongitude=${GPSLongitude}`,
-        `-GPSLatitudeRef=${GPSLatitudeRef}`,
-        `-GPSLongitudeRef=${GPSLongitudeRef}`,
-        '-overwrite_original', '-P', image
-      ], error => {
-        res.send(error ? 'NO' : 'OK');
-      });
-  }
-  else {
-    const path = join(FOLDER, name, '.json', file);
-    readFile(path, (err, data) => {
-      if (err)
-        res.send('NO');
-      else {
-        try {
-          const info = parse(data);
-          info.title = body.title || '';
-          info.description = body.description || '';
-          writeFile(path, stringify(info), err => {
-            if (err)
-              res.send('NO');
-            else {
-              const args = [];
-              if (body.title)
-                args.push(`-IFD0:ImageDescription=${body.title}`);
-              if (body.description)
-                args.push(`-ExifIFD:UserComment=${body.description}`);
-              if (args.length) {
-                args.push('-overwrite_original', '-P', image);
-                execFile('exiftool', args, () => res.send('OK'));
-              }
-              else
-                res.send('OK');
-            }
-          });
-        }
-        catch (o_O) {
-          // TODO: corrupted JSON files are possible
-          //       (user left early or something)
-          //       be sure if the file exists
-          //       its JSON gets re-sanitize
+      return;
+    }
+    try {
+      const data = parse(buffer);
+      const all = [];
+      if (body.coords) {
+        const {
+          GPSLatitude, GPSLongitude,
+          GPSLatitudeRef, GPSLongitudeRef
+        } = body.coords;
+        if (
+          typeof GPSLatitude !== 'number' || isNaN(GPSLatitude) ||
+          typeof GPSLongitude !== 'number' || isNaN(GPSLongitude) ||
+          !LATITUDE.has(GPSLatitudeRef) || !LONGITUDE.has(GPSLongitudeRef)
+        ) {
           res.send('NO');
+          return;
+        }
+        else {
+          data.coords = [GPSLatitude, GPSLongitude];
+          data.feature = feature([GPSLongitude, GPSLatitude]);
+          all.push(new Promise($ => {
+            execFile('exiftool', [
+              `-GPSLatitude=${GPSLatitude}`,
+              `-GPSLongitude=${GPSLongitude}`,
+              `-GPSLatitudeRef=${GPSLatitudeRef}`,
+              `-GPSLongitudeRef=${GPSLongitudeRef}`,
+              '-overwrite_original', '-P', image
+            ], $);
+          }));
         }
       }
-    });
-  }
+      else {
+        const args = [];
+        if (data.title !== body.title)
+          args.push(`-IFD0:ImageDescription=${
+            (data.title = body.title || '')
+          }`);
+        if (data.description !== body.description)
+          args.push(`-ExifIFD:UserComment=${(
+            data.description = body.description || ''
+          )}`);
+        ;
+        if (args.length) {
+          args.push('-overwrite_original', '-P', image);
+          all.push(new Promise($ => {
+            execFile('exiftool', args, $);
+          }));
+        }
+      }
+      all.push(new Promise($ => {
+        writeFile(path, stringify(data), $);
+      }));
+      Promise.all(all).then(results => {
+        if (results.some(err => !!err))
+          res.send('NO');
+        else if (body.coords) {
+          res.send(stringify(data.feature) || '');
+        }
+        else
+          res.send('OK');
+      });
+    }
+    catch (o_O) {
+      // TODO: corrupted JSON files are possible
+      //       (user left early or something)
+      //       be sure if the file exists
+      //       its JSON gets re-sanitize
+      res.send('NO');
+    }
+  });
 });
 
 

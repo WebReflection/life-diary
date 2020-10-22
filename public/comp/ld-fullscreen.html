@@ -112,10 +112,10 @@
   import {render, html, ref} from '@uce';
   import IMAGE from '/js/image.js';
   import EXIF from '/js/exif.js';
+  import Leaflet from '/js/leaflet.js';
 
-  const handlers = ['dragging', 'touchZoom', 'doubleClickZoom', 'scrollWheelZoom', 'boxZoom', 'tap'];
+  const {stringify, parse} = JSON;
 
-  let leafLet, marker;
   let fallback = false;
 
   const ontransitionend = ({currentTarget}) => {
@@ -124,13 +124,26 @@
   };
 
   const view = (element, file, media, showMap) => {
+    const {title, description, feature} = file;
+    const {properties: {emojiFlag, nameEn}} = (feature || {properties:{}});
+    const small = `${emojiFlag || ''} ${nameEn || ''}`;
     render(element, html.for(element, 'view')`
       ${media}
       <div class="details">
-        <h2>${file.title || '​'}</h2>
-        <p>${file.description || '​'}</p>
+        <h2>${title || '​'}</h2>
+        <p>${description || '​'}</p>
+        <small>${small}</small>
       </div>
-      <div ref="map" ontransitionend=${ontransitionend}></div>
+      <div contextmenu="leaflet-edit" ref="map"
+        .data=${file}
+        ontransitionend=${ontransitionend} />
+      <menu type="context" id="leaflet-edit">
+        <menuitem type="command" label="Update Geo Location"
+          onclick=${updateGeoLocation}>
+          🗺️ Update Geo Location
+        </menuitem>
+        <hr>
+      </menu>
       <button ref="geo"
         ontransitionend=${ontransitionend}
         onclick=${showMap}>🗺️</button>
@@ -160,23 +173,16 @@
     });
   };
 
-  const getCoords = ({metadata}) => {
-    return metadata && metadata.EXIF ? EXIF.coords(metadata.EXIF) : [];
-  };
+  const getCoords = ({coords, metadata}) => (
+    (coords && coords.length) ?
+      coords :
+      (metadata && metadata.EXIF ? EXIF.coords(metadata.EXIF) : [])
+  );
 
-  const mapSetup = (el, coords) => new Promise($ => {
-    el.style.visibility = 'visible';
-    if (leafLet) {
-      marker.setLatLng(coords);
-      leafLet.panTo(coords);
-    }
-    else {
-      leafLet = L.map(el).setView(coords, 16);
-      marker = L.marker(coords).addTo(leafLet);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(leafLet);
-    }
+  const mapSetup = (map, coords) => new Promise($ => {
+    map.style.visibility = 'visible';
+    Leaflet.setup(map);
+    Leaflet.show(coords);
   });
 
   const displayAndShow = el => {
@@ -184,6 +190,37 @@
     requestAnimationFrame(() => requestAnimationFrame(() => {
       el.style.opacity = 1;
     }));
+  };
+
+  const updateGeoLocation = event => {
+    const {currentTarget, pageX, pageY} = event;
+    const {map} = ref(currentTarget.closest('[is="ld-fullscreen"]'));
+    const {data} = map;
+    const [GPSLatitude, GPSLongitude] = Leaflet.mouseCoords;
+    const GPSLatitudeRef = GPSLatitude < 0 ? 'South' : 'North';
+    const GPSLongitudeRef = GPSLongitude < 0 ? 'West' : 'East';
+    const info = {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: stringify({
+        coords: {
+          GPSLatitude, GPSLatitudeRef,
+          GPSLongitude, GPSLongitudeRef
+        }
+      })
+    };
+    fetch(data.full, info).then(b => b.text()).then(result => {
+      if (result === 'NO')
+        alert(`Unable to updated Geo location`);
+      else {
+        data.coords = [GPSLatitude, GPSLongitude];
+        mapSetup(map, data.coords);
+        if (result)
+          data.feature = parse(result);
+      }
+    });
   };
 
   export default {
@@ -245,9 +282,9 @@
         };
 
         let timer = 0;
-        const showDetails = ({title, description}) => {
+        const showDetails = ({title, description, feature}) => {
           clearTimeout(timer);
-          if (title || description) {
+          if (title || description || feature) {
             requestAnimationFrame(() => {
               this.classList.add('details');
             });

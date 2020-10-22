@@ -37,7 +37,9 @@ const convert = dms => {
   return NaN;
 };
 
-export default {
+// this module is used by the server too, hence it's CommonJS
+// however, this might as well be used *only* in the server
+module.exports = {
   // this currently converts only WSG-84 compatible EXIF values
   coords({
     GPSMapDatum,
