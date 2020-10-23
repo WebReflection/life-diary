@@ -74,7 +74,6 @@ app.use(fileUpload({
 
 app.use(compress());
 app.use(express.static(PUBLIC));
-
 app.use(bodyParser.json());
 
 
@@ -233,9 +232,8 @@ app.put('/album/:name/:file', (req, res) => {
       Promise.all(all).then(results => {
         if (results.some(err => !!err))
           res.send('NO');
-        else if (body.coords) {
+        else if (body.coords)
           res.send(stringify(data.feature) || '');
-        }
         else
           res.send('OK');
       });
