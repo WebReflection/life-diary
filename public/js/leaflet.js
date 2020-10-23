@@ -17,6 +17,9 @@
  *
  */
 
+const MAP_SERVER = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+const MAP_ATTRIBUTION = "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors";
+
 let leaflet, marker, mouseCoords = [];
 let visibleMarker = false;
 
@@ -39,9 +42,7 @@ export default {
       if (!hasCoords)
         coords = [0, 0];
       leaflet.setView(coords, 16);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(leaflet);
+      L.tileLayer(MAP_SERVER, {attribution: MAP_ATTRIBUTION}).addTo(leaflet);
       marker = L.marker(coords);
     }
     if (hasCoords) {

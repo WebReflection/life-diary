@@ -87,6 +87,7 @@ To know features and options, try `npx life-diary --help`, and this is a summary
   * automatic *adoption* of foreign folders already contining images or videos (currently in beta, please provide cleaned up folders)
   * automatic *EXIF* data extraction, and possibility to associate data to any entry (currently *title* and *description*)
   * automatic *Map* discovery when *EXIF* data exists, and its Geo coordinates can be converted, modified, or saved
+  * it is possible to provide a custom tile server, [whenever you have one running locally](https://github.com/Overv/openstreetmap-tile-server), and/or a custom attribution
 
 Most importantly, the content is always local, and beside the *Map* feature, everything should run out of the box within a local network, without ever requiring access to the Internet.
 
@@ -95,16 +96,19 @@ Most importantly, the content is always local, and beside the *Map* feature, eve
 
 To start with, I am not a designer, so that I'd love to have some help improving the layout in any possible way, but techincally speaking, these are the future achievements I'd like to unlock in the future:
 
-#### Server Side
-
-  * proxy OpenStreetMap tiles to avoid abusing their servers and make tiles available offline too ('cause live rendering on a Raspberry Pi is out of question)
-  * *maybe* order by creation time, instead of name ...
-  * *maybe* add a search per title, description, and/or country, within the *home* page
-  * *maybe* * provide a `GET` end point to download an album as `.zip` folder, so that a single album can be used for any other purpose (is this useful though? the folder is already in the drive)
-
 #### Client Side
 
   * I've made it work, I've made it (*kinda*) fast, now I need your help to make it *beautiful*
+
+#### Server Side
+
+Mostly all functionalities are in, but there could be streatch goals, as example:
+
+  * *maybe* order by creation time, instead of name ...
+  * *maybe* add a search per title, description, and/or country, within the *home* page ...
+  * or *maybe* store most basic info per file into SQLite, so that it's possible to query the whole database without crawling each folder ...
+  * and *maybe* * provide a `GET` end point to download an album as `.zip` folder, so that a single album can be used for any other purpose (is this useful though? the folder is already in the drive)
+
 
 If you have an other suggestion for either client or server side, I'm listening!
 

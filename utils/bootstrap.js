@@ -1,8 +1,13 @@
 const {execSync} = require('child_process');
-const {existsSync, rmdirSync, statSync, writeFile} = require('fs');
+const {existsSync, rmdirSync, statSync, readFileSync, writeFile} = require('fs');
 const {join, resolve} = require('path');
 
 const {log, error} = require('essential-md');
+
+const {stringify} = JSON;
+
+const MAP_SERVER = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const MAP_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 let EXIF = '';
 try { EXIF = execSync('exiftool -ver').toString().trim(); }
@@ -38,6 +43,8 @@ if (help || !FOLDER || !existsSync(FOLDER) || !statSync(FOLDER).isDirectory()) {
   \`-h | --help\`           -this help-
   \`--password=***\`        -basic realm to view/edit-
   \`--password-write=***\`  -basic realm to edit only-
+  \`--map-server=***\`      -map tile server to use-
+  \`--map-attribution=***\` -map attribution-
 
 `;
   if (!help)
@@ -61,5 +68,27 @@ if (options.some(arg => /^--password=(.+)$/.test(arg)))
 let PASSWORD_WRITE = PASSWORD_READ;
 if (!PASSWORD_WRITE && options.some(arg => /^--password-write=(.+)$/.test(arg)))
   PASSWORD_WRITE = RegExp.$1;
+
+const mapDetails = [
+  [/const MAP_SERVER\s*=.+/, `const MAP_SERVER = ${stringify(
+      options.some(arg => /^--map-server=(.+)$/.test(arg)) ?
+        RegExp.$1 :
+        MAP_SERVER
+  )};`],
+  [/const MAP_ATTRIBUTION\s*=.+/, `const MAP_ATTRIBUTION = ${stringify(
+      options.some(arg => /^--map-attribution=(.+)$/.test(arg)) ?
+        RegExp.$1 :
+        MAP_ATTRIBUTION
+  )};`]
+];
+
+const leaflet = join(__dirname, '..', 'public', 'js', 'leaflet.js');
+writeFile(
+  leaflet,
+  readFileSync(leaflet).toString()
+    .replace(...mapDetails[0])
+    .replace(...mapDetails[1]),
+  Object
+);
 
 module.exports = {EXIF, FOLDER, TMP, PORT, PASSWORD_READ, PASSWORD_WRITE};
