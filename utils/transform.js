@@ -3,6 +3,7 @@ const {readFile, writeFile} = require('fs');
 const {join} = require('path');
 
 const EXIF = require(join(__dirname, '..', 'public', 'js', 'exif.js'));
+const IMAGE = require(join(__dirname, '..', 'public', 'js', 'image.js'));
 
 const {feature} = require('country-coder');
 const mime = require('mime-types');
@@ -10,7 +11,6 @@ const sharp = require('sharp');
 const cover = sharp.fit.cover;
 const withoutEnlargement = true;
 
-const IMAGE = /\.(?:webp|avif|a?png|jpe?g|gif|svg)$/i;
 const {stringify, parse} = JSON;
 
 const base64 = (type, data) => `data:${
