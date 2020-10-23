@@ -134,7 +134,8 @@
         event.stopImmediatePropagation();
         const {currentTarget} = event;
         const {data} = element;
-        if (confirm(`Are you sure to delete ${data.full}?\n${getTitle(data)} ${getDescription(data)}`)) {
+        const decoded = decodeURIComponent(data.full);
+        if (confirm(`Are you sure to delete ${decoded}?\n${getTitle(data)} ${getDescription(data)}`)) {
           currentTarget.disabled = true;
           fetch(data.full, {method: 'DELETE'})
             .then(res => res.text()).then(result => {
@@ -144,7 +145,7 @@
                   new CustomEvent('deleted', {detail: data})
                 );
               else
-                alert(`Unable to delete ${data.full}`);
+                alert(`Unable to delete ${decoded}`);
             });
           }
       },

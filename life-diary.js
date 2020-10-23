@@ -64,7 +64,7 @@ const sizes = new Map;
 
 
 
-// MIDLLEWARE
+// MIDDLEWARE
 app.use(fileUpload({
   uploadTimeout: 0,
   createParentPath: true,
