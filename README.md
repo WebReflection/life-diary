@@ -84,6 +84,7 @@ To know features and options, try `npx life-diary --help`, and this is a summary
   * optimized images previews for a quick scan through the album
   * unmodified images and videos qualities for enjoying these in full screen
   * interface (ugly but ...) 100% keyboard navigable, everything should be a *Tab* away
+  * automatic *adoption* of foreign folders already contining images or videos (currently in beta, please provide cleaned up folders)
   * automatic *EXIF* data extraction, and possibility to associate data to any entry (currently *title* and *description*)
   * automatic *Map* discovery when *EXIF* data exists, and its Geo coordinates can be converted, modified, or saved
 
@@ -96,12 +97,9 @@ To start with, I am not a designer, so that I'd love to have some help improving
 
 #### Server Side
 
-  * automatically *restore* or *fix* possibly corrupted data, as example for those cases when a user force-closes the browsers while uplading
   * proxy OpenStreetMap tiles to avoid abusing their servers and make tiles available offline too ('cause live rendering on a Raspberry Pi is out of question)
   * *maybe* order by creation time, instead of name ...
   * *maybe* add a search per title, description, and/or country, within the *home* page
-  * *maybe* import existing folders via CLI, instead of needing *HTTP* to upload all content (not much value, but maybe handy)
-  * *maybe* backup automatically each content to a specific destination (maybe via *rsync*? ... still thinking about it, although this can be done as cronjob or manually already, no priority for now)
   * *maybe* * provide a `GET` end point to download an album as `.zip` folder, so that a single album can be used for any other purpose (is this useful though? the folder is already in the drive)
 
 #### Client Side

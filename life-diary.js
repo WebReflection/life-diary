@@ -24,7 +24,7 @@ const {extname, join, resolve} = require('path');
 const {rmdir, unlink, mkdir, readFile, readdir, writeFile} = require('fs');
 
 const {feature} = require('country-coder');
-const {log, warn} = require('essential-md');
+const {log, info, warn} = require('essential-md');
 
 const include = util => require(join(__dirname, 'utils', `${util}.js`));
 const {EXIF, FOLDER, TMP, PORT, PASSWORD_READ, PASSWORD_WRITE} = include('bootstrap');
@@ -241,10 +241,6 @@ app.put('/album/:name/:file', (req, res) => {
       });
     }
     catch (o_O) {
-      // TODO: corrupted JSON files are possible
-      //       (user left early or something)
-      //       be sure if the file exists
-      //       its JSON gets re-sanitize
       res.send('NO');
     }
   });
@@ -252,7 +248,7 @@ app.put('/album/:name/:file', (req, res) => {
 
 
 
-// GET - Album - TODO implement optional authentication to read
+// GET - Album
 app.get('/album/:name/:file', (req, res) => {
   if (!pass(req, res, PASSWORD_READ))
     return;
@@ -278,16 +274,41 @@ app.get('/album/:name', (req, res) => {
     return;
   const {params: {name}} = req;
   const isJSON = extname(name) === '.json';
-  const album = join(FOLDER, isJSON ? name.slice(0, -5) : name);
+  const realName = isJSON ? name.slice(0, -5) : name;
+  const album = join(FOLDER, realName);
   if (resolve(album).indexOf(FOLDER)) {
     warn`Illegal folder *get* operation: \`${album}\``;
     res.send('NO');
   }
   else {
     if (isJSON) {
-      files(join(album, '.json')).then(files => {
-        Promise.all(files.map(file => new Promise($ => {
-          readFile(join(album, '.json', file), (_, b) => $(parse(b || 'null')));
+      files(album).then(sources => {
+        Promise.all(sources.map(file => new Promise($ => {
+          readFile(join(album, '.json', file), (noFile, buffer) => {
+            try {
+              if (noFile)
+                throw noFile;
+              $(parse(buffer));
+            }
+            catch (corruptedOrMissing) {
+              if (noFile)
+                info`    importing \`./${realName}/${file}\``;
+              else
+                warn` corrupted \`./${realName}/${file}\``;
+              mkdir(join(album, '.json'), () => {
+                const full = `/album/${
+                  encodeURIComponent(realName)
+                }/${
+                  encodeURIComponent(file)
+                }`;
+                transform(album, file, full).then(data => {
+                  sizes.delete(album);
+                  sizes.delete(FOLDER);
+                  $(data);
+                });
+              });
+            }
+          });
         })))
         .then(noCache.bind(res))
         .catch(noCache.bind(res, 'NO'));
@@ -306,7 +327,7 @@ app.get('/albums', (req, res) => {
 
 
 
-// GET - Size - TODO implement optional authentication to read
+// GET - Size
 const sendSize = (res, folder) => {
   if (!sizes.has(folder))
     sizes.set(folder, size(folder));
