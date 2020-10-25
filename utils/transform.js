@@ -5,7 +5,7 @@ const {join} = require('path');
 const EXIF = require(join(__dirname, '..', 'public', 'js', 'exif.js'));
 const IMAGE = require(join(__dirname, '..', 'public', 'js', 'image.js'));
 
-const {feature} = require('country-coder');
+const {reverse} = require('geo2city');
 const mime = require('mime-types');
 const sharp = require('sharp');
 const cover = sharp.fit.cover;
@@ -47,17 +47,21 @@ module.exports = (folder, upload, full) => new Promise($ => {
     description: '',
     preview: '',
     coords: [],
-    feature: null,
+    geo: null,
     metadata: null
   };
   exif(image).then(metadata => {
     data.metadata = metadata;
+    let geoData = Promise.resolve(void 0);
     if (metadata && metadata.EXIF) {
       data.title = metadata.EXIF.ImageDescription || '';
       data.description = metadata.EXIF.UserComment || '';
       data.coords = EXIF.coords(metadata.EXIF);
-      if (data.coords.length)
-        data.feature = feature([data.coords[1], data.coords[0]]);
+      if (data.coords.length) {
+        geoData = reverse(data.coords).then(geo => {
+          data.geo = geo;
+        });
+      }
     }
     (
       IMAGE.test(image) && !/\.svg$/i.test(image) ?
@@ -65,8 +69,10 @@ module.exports = (folder, upload, full) => new Promise($ => {
         Promise.resolve(full)
     ).then(preview => {
       data.preview = preview;
-      writeFile(json, stringify(data), err => {
-        $(err ? null : data);
+      geoData.then(() => {
+        writeFile(json, stringify(data), err => {
+          $(err ? null : data);
+        });
       });
     });
   });

@@ -23,7 +23,7 @@ const {execFile} = require('child_process');
 const {extname, join, resolve} = require('path');
 const {rmdir, unlink, mkdir, readFile, readdir, writeFile} = require('fs');
 
-const {feature} = require('country-coder');
+const {reverse} = require('geo2city');
 const {log, info, warn} = require('essential-md');
 
 const include = util => require(join(__dirname, 'utils', `${util}.js`));
@@ -195,16 +195,18 @@ app.put('/album/:name/:file', (req, res) => {
         }
         else {
           data.coords = [GPSLatitude, GPSLongitude];
-          data.feature = feature([GPSLongitude, GPSLatitude]);
           all.push(new Promise($ => {
-            execFile('exiftool', [
-              '-GPSMapDatum=WGS-84',
-              `-GPSLatitude=${GPSLatitude}`,
-              `-GPSLongitude=${GPSLongitude}`,
-              `-GPSLatitudeRef=${GPSLatitudeRef}`,
-              `-GPSLongitudeRef=${GPSLongitudeRef}`,
-              '-overwrite_original', '-P', image
-            ], $);
+            reverse([GPSLatitude, GPSLongitude]).then(geo => {
+              data.geo = geo;
+              execFile('exiftool', [
+                '-GPSMapDatum=WGS-84',
+                `-GPSLatitude=${GPSLatitude}`,
+                `-GPSLongitude=${GPSLongitude}`,
+                `-GPSLatitudeRef=${GPSLatitudeRef}`,
+                `-GPSLongitudeRef=${GPSLongitudeRef}`,
+                '-overwrite_original', '-P', image
+              ], $);
+            });
           }));
         }
       }
@@ -226,16 +228,17 @@ app.put('/album/:name/:file', (req, res) => {
           }));
         }
       }
-      all.push(new Promise($ => {
-        writeFile(path, stringify(data), $);
-      }));
       Promise.all(all).then(results => {
-        if (results.some(err => !!err))
-          res.send('NO');
-        else if (body.coords)
-          res.send(stringify(data.feature) || '');
-        else
-          res.send('OK');
+        new Promise($ => {
+          writeFile(path, stringify(data), $);
+        }).then(() => {
+          if (results.some(err => !!err))
+            res.send('NO');
+          else if (body.coords)
+            res.send(stringify(data.geo) || '');
+          else
+            res.send('OK');
+        });
       });
     }
     catch (o_O) {

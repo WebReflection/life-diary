@@ -18,7 +18,7 @@
  */
 
 const MAP_SERVER = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const MAP_ATTRIBUTION = "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors";
+const MAP_ATTRIBUTION = "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors - Geo data by <a href=\"https://simplemaps.com/data/world-cities\">simplemaps</a>";
 
 let leaflet, marker, mouseCoords = [];
 let visibleMarker = false;

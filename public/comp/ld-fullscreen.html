@@ -147,9 +147,9 @@
   };
 
   const view = (element, file, media, showMap) => {
-    const {title, description, feature} = file;
-    const {properties: {emojiFlag, nameEn}} = (feature || {properties:{}});
-    const small = `${emojiFlag || ''} ${nameEn || ''}`;
+    const {title, description, geo} = file;
+    const {flag, country, city} = geo || {};
+    const small = `${flag || ''} ${country || ''}${city ? (', ' + city) : ''}`;
     render(element, html.for(element, 'view')`
       <div ref="swiper">${media}</div>
       <div class="details">
@@ -279,9 +279,9 @@
         };
 
         let timer = 0;
-        const showDetails = ({title, description, feature}) => {
+        const showDetails = ({title, description, geo}) => {
           clearTimeout(timer);
-          if (title || description || feature) {
+          if (title || description || geo) {
             requestAnimationFrame(() => {
               this.classList.add('details');
             });
@@ -311,6 +311,8 @@
           if (!ownerDocument.fullscreenElement && !ownerDocument.webkitFullscreenElement) {
             document.body.classList.remove('ld-fullscreen');
             const {map, geo} = ref(this);
+            geo.blur();
+            geo.style.opacity = 0;
             map.style.opacity = 0;
             this.className = '';
             view(this, {title: '', description: ''}, '', null);
@@ -378,7 +380,7 @@
                     data.coords = [GPSLatitude, GPSLongitude];
                     mapSetup(map, data.coords);
                     if (result)
-                      data.feature = parse(result);
+                      data.geo = parse(result);
                   }
                 });
               }
