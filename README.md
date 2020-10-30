@@ -99,14 +99,16 @@ To start with, I am not a designer, so that I'd love to have some help improving
 #### Client Side
 
   * I've made it work, I've made it (*kinda*) fast, now I need your help to make it *beautiful*
+  * add a heart icon to fave pictures or videos (once favorties BE is in place)
 
 #### Server Side
 
 Mostly all functionalities are in, but there could be streatch goals, as example:
 
+  * add a *Fevorites* album that will show only favorites pictures or videos
+  * store most basic info per file into *SQLite*, so that it's possible to query the whole database without crawling each folder
   * *maybe* order by creation time, instead of name ...
   * *maybe* add a search per title, description, and/or country, within the *home* page ...
-  * or *maybe* store most basic info per file into SQLite, so that it's possible to query the whole database without crawling each folder ...
   * and *maybe* * provide a `GET` end point to download an album as `.zip` folder, so that a single album can be used for any other purpose (is this useful though? the folder is already in the drive)
 
 
