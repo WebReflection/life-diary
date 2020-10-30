@@ -84,7 +84,7 @@ To know features and options, try `npx life-diary --help`, and this is a summary
   * optimized images previews for a quick scan through the album
   * unmodified images and videos qualities for enjoying these in full screen
   * interface (ugly but ...) 100% keyboard navigable, everything should be a *Tab* away
-  * automatic *adoption* of foreign folders already contining images or videos (currently in beta, please provide cleaned up folders)
+  * automatic *adoption* of foreign folders already containing images or videos (currently in beta, please provide cleaned up folders)
   * automatic *EXIF* data extraction, and possibility to associate data to any entry (currently *title* and *description*)
   * automatic *Map* discovery when *EXIF* data exists, and its Geo coordinates can be converted, modified, or saved
   * it is possible to provide a custom tile server, [whenever you have one running locally](https://github.com/Overv/openstreetmap-tile-server), and/or a custom attribution
