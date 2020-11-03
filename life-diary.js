@@ -111,7 +111,7 @@ app.delete('/album/:name', (req, res) => {
     res.send('NO');
   }
   else
-    rmdir(album, {recursive: true}, () => {
+    rmdir(album, {recursive: true, force: true}, () => {
       sizes.delete(album);
       sizes.delete(FOLDER);
       res.send('OK');

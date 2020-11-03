@@ -56,7 +56,7 @@ const {PORT = 8080} = process.env;
 
 const TMP = join(FOLDER, '.tmp');
 if (existsSync(TMP))
-  rmdirSync(TMP, {recursive: true});
+  rmdirSync(TMP, {recursive: true, force: true});
 
 if (!existsSync(join(FOLDER, '.gitignore')))
   writeFile(join(FOLDER, '.gitignore'), '.DS_Store\n.tmp/', Object);
