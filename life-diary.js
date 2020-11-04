@@ -21,7 +21,7 @@
 
 const {execFile} = require('child_process');
 const {extname, join, resolve} = require('path');
-const {rmdir, unlink, mkdir, readFile, readdir, writeFile} = require('fs');
+const {rm, rmdir, unlink, mkdir, readFile, readdir, writeFile} = require('fs');
 
 const {feature} = require('country-coder');
 const {log, info, warn} = require('essential-md');
@@ -111,7 +111,7 @@ app.delete('/album/:name', (req, res) => {
     res.send('NO');
   }
   else
-    rmdir(album, {recursive: true, force: true}, () => {
+    (rm || rmdir)(album, {recursive: true, force: true}, () => {
       sizes.delete(album);
       sizes.delete(FOLDER);
       res.send('OK');
