@@ -159,6 +159,7 @@
             let uploading = true;
             let nextValue = 0;
             let value = 0;
+            let isMOV = false;
 
             progress.max = max;
             progress.value = value;
@@ -179,6 +180,7 @@
                 wakeLock.release();
               }
               else {
+                isMOV = /\.mov$/i.test(uploads[i].name);
                 nextValue += uploads[i].size;
                 const encoded = encodeURIComponent(element.data.album);
                 const body = new FormData();
@@ -208,7 +210,7 @@
             let frames = 0;
             (function update() {
               if (uploading) {
-                value += (nextValue - value) * .02;
+                value += (nextValue - value) * (isMOV ? .005 : .02);
                 progress.value = value;
                 if (!(frames++ % 6))
                   progress.spinner = cursor.next();
