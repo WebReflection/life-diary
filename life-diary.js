@@ -27,7 +27,7 @@ const {feature} = require('country-coder');
 const {log, info, warn} = require('essential-md');
 
 const include = util => require(join(__dirname, 'utils', `${util}.js`));
-const {EXIF, FOLDER, TMP, PORT, PASSWORD_READ, PASSWORD_WRITE} = include('bootstrap');
+const {EXIF, FFMPEG, FOLDER, TMP, PORT, PASSWORD_READ, PASSWORD_WRITE} = include('bootstrap');
 const {files, filter, size} = include('disk');
 const transform = include('transform');
 const IPv4 = include('IPv4');
@@ -378,7 +378,7 @@ app.listen(PORT, '0.0.0.0', () => {
   log`# Life Diary ❤️ `;
   log` -version-  ${
     require(join(__dirname, 'package.json')).version
-  } -exiftool- ${EXIF}`;
+  } -exiftool- ${EXIF} -ffmpeg- ${FFMPEG || 'disabled'}`;
   for (const ip of IPv4())
     log` -visit-    **''http://${ip}:${PORT}/''**`;
   log` -folder-   ${FOLDER}`;

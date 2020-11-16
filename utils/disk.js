@@ -3,7 +3,9 @@ const {join} = require('path');
 
 const {floor, log, pow} = Math;
 
-const filter = files => files.filter(file => !/^\./.test(file));
+const filter = files => files.filter(
+  file => !(/^\./.test(file) || /\.mov\.mp4$/i.test(file))
+);
 
 const crawl = folder => new Promise($ => {
   readdir(folder, (err, files) => {

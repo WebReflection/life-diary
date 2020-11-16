@@ -32,6 +32,12 @@ After a lot of investigation, I've decided this is the best way to go, also for 
   * every more updated module, uses *exiftool* behind the scene anyway, so I prefered not to have a "*man in the middle*" for something deadly easy to install in every *Linux* distribution, but also in any *macOS* or even *Windows*, if that's your cup of tea
 
 
+## Optional Requirements
+
+If [ffmpeg](https://ffmpeg.org/) is available, *Life Diary* will convert `.MOV` files into `.mp4`, meaning that these kind of files might take very long time to be processes, in case the original `.MOV` is a big one.
+
+To avoid converting these files use the `--no-ffmpeg` flag, but keep in mind not every browser might be able to show `.mov` files.
+
 
 ## Try it ❤️
 

@@ -2,6 +2,8 @@ const {execFile} = require('child_process');
 const {readFile, writeFile} = require('fs');
 const {join} = require('path');
 
+const {FFMPEG} = require('./bootstrap.js');
+
 const EXIF = require(join(__dirname, '..', 'public', 'js', 'exif.js'));
 const IMAGE = require(join(__dirname, '..', 'public', 'js', 'image.js'));
 
@@ -12,6 +14,8 @@ const cover = sharp.fit.cover;
 const withoutEnlargement = true;
 
 const {stringify, parse} = JSON;
+
+const asMP4 = file => file.replace(/\.mov$/i, '.mp4');
 
 const base64 = (type, data) => `data:${
   mime.lookup(type)
@@ -38,6 +42,14 @@ const preview = (source, dest, fallback) => sharp(source)
     () => fallback
   );
 
+const mp4 = (source, dest, fallback) => new Promise($ => {
+  // const args = ['-i', source, '-vcodec', 'copy', '-acodec', 'copy', dest];
+  const args = ['-i', source, '-qscale', '0', dest];
+  execFile('ffmpeg', args, (error) => {
+    $(error ? fallback : fallback + '.mp4');
+  });
+});
+
 module.exports = (folder, upload, full) => new Promise($ => {
   const image = join(folder, upload);
   const json = join(folder, '.json', upload);
@@ -62,9 +74,13 @@ module.exports = (folder, upload, full) => new Promise($ => {
     (
       IMAGE.test(image) && !/\.svg$/i.test(image) ?
         preview(image, json, full) :
-        Promise.resolve(full)
+        ((/\.mov$/i.test(image) && FFMPEG) ?
+          mp4(image, image + '.mp4', full) :
+          Promise.resolve(full))
     ).then(preview => {
       data.preview = preview;
+      if (/\.mov\.mp4$/i.test(preview))
+        data.full = preview;
       writeFile(json, stringify(data), err => {
         $(err ? null : data);
       });

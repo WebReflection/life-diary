@@ -45,6 +45,7 @@ if (help || !FOLDER || !existsSync(FOLDER) || !statSync(FOLDER).isDirectory()) {
   \`--password-write=***\`  -basic realm to edit only-
   \`--map-server=***\`      -map tile server to use-
   \`--map-attribution=***\` -map attribution-
+  \`--no-ffmpeg\`           -disable mov to mp4 convertion-
 
 `;
   if (!help)
@@ -82,6 +83,12 @@ const mapDetails = [
   )};`]
 ];
 
+let FFMPEG = '';
+if (!options.some(arg => '--no-ffmpeg' === arg)) {
+  try { FFMPEG = execSync('ffmpeg -version').toString().replace(/^[\s\S]+? version ([^ ]+)[\s\S]+$/, '$1'); }
+  catch (e) {}
+}
+
 const leaflet = join(__dirname, '..', 'public', 'js', 'leaflet.js');
 writeFile(
   leaflet,
@@ -91,4 +98,4 @@ writeFile(
   Object
 );
 
-module.exports = {EXIF, FOLDER, TMP, PORT, PASSWORD_READ, PASSWORD_WRITE};
+module.exports = {EXIF, FFMPEG, FOLDER, TMP, PORT, PASSWORD_READ, PASSWORD_WRITE};
