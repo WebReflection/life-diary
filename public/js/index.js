@@ -29,7 +29,7 @@ Promise.all([
   const Template = customElements.get('uce-template');
   loader({
     on(name) {
-      if (name !== 'uce-template') {
+      if (name !== 'uce-template' && name !== 'masonry-rows') {
         fetch(`/comp/${name}.html`).then(b => b.text()).then(content => {
           document.body.appendChild(Template.from(content));
         });

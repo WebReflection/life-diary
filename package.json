@@ -25,9 +25,9 @@
     "country-coder": "^2.1.0",
     "essential-md": "^0.3.1",
     "express": "^4.17.1",
-    "express-fileupload": "^1.2.0",
-    "mime-types": "^2.1.27",
-    "sharp": "^0.26.2"
+    "express-fileupload": "^1.2.1",
+    "mime-types": "^2.1.28",
+    "sharp": "^0.27.0"
   },
   "main": "life-diary.js",
   "repository": {
