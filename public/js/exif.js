@@ -46,7 +46,10 @@ module.exports = {
     GPSLatitude: LA, GPSLatitudeRef: LAR,
     GPSLongitude: LO, GPSLongitudeRef: LOR
   }) {
-    if (/WGS.*84/i.test(GPSMapDatum) && LA && LAR && LO && LOR) {
+    if (
+      (!GPSMapDatum || /WGS.*84/i.test(GPSMapDatum)) &&
+      LA && LAR && LO && LOR
+    ) {
       const lat = convert(`${LA.replace(DEG, '°')} ${LAR[0]}`);
       const long = convert(`${LO.replace(DEG, '°')} ${LOR[0]}`);
       if (!isNaN(lat) && !isNaN(long))
